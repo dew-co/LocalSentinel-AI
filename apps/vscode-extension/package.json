@@ -1,0 +1,27 @@
+{
+  "name": "localsentinel-ai-vscode",
+  "displayName": "LocalSentinel AI",
+  "description": "Placeholder VS Code extension structure for future LocalSentinel AI integration.",
+  "version": "0.1.0",
+  "publisher": "localsentinel",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "localsentinel.openAssistant", "title": "LocalSentinel: Open Assistant" },
+      { "command": "localsentinel.explainCurrentFile", "title": "LocalSentinel: Explain Current File" },
+      { "command": "localsentinel.generateFixPlan", "title": "LocalSentinel: Generate Fix Plan" },
+      { "command": "localsentinel.sendSelection", "title": "LocalSentinel: Send Selection to Assistant" },
+      { "command": "localsentinel.analyzeProject", "title": "LocalSentinel: Analyze Project" }
+    ]
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.5.4"
+  }
+}
+

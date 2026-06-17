@@ -1,0 +1,20 @@
+{
+  "name": "localsentinel-ai",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/vscode-extension",
+    "packages/shared"
+  ],
+  "scripts": {
+    "web:dev": "npm --workspace apps/web run dev",
+    "web:build": "npm --workspace apps/web run build",
+    "api:dev": "cd apps/api && uvicorn main:app --reload",
+    "api:check": "python -m compileall apps/api"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3"
+  }
+}

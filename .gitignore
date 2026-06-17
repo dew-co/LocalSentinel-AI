@@ -1,0 +1,15 @@
+node_modules/
+dist/
+build/
+.next/
+.venv/
+venv/
+env/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.env
+*.log
+data/sqlite/*.db-journal
+data/vector_store/*.tmp
+
