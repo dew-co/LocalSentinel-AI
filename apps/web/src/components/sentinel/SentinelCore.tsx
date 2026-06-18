@@ -4,8 +4,11 @@ import SentinelStatus from "./SentinelStatus";
 
 export type SentinelCoreStatus = "Listening" | "Thinking" | "Speaking" | "Planning" | "Ready" | "Executing" | "Needs Approval";
 
+export type SentinelCoreMode = "Think Mode" | "Research Mode" | "Code Mode" | "Companion Mode" | "System Mode";
+
 type Props = {
   status?: SentinelCoreStatus;
+  mode?: SentinelCoreMode;
   voiceActive?: boolean;
   responding?: boolean;
   modelOnline?: boolean;
@@ -228,6 +231,7 @@ function DataParticle({ index, ring, status }: { index: number; ring: number; st
 
 export default function SentinelCore({
   status = "Ready",
+  mode = "Companion Mode",
   voiceActive = false,
   responding = false,
   modelOnline = false,
@@ -568,7 +572,12 @@ export default function SentinelCore({
         {/* ── Status text ── */}
         <div className="mt-2 text-center">
           <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/50">Sentinel Core</p>
-          <SentinelStatus status={status} />
+          <div className="flex justify-center items-center gap-2 mt-1">
+            <SentinelStatus status={status} />
+            <span className="text-xs border border-white/20 px-2 py-0.5 rounded-full text-white/70">
+              {mode}
+            </span>
+          </div>
           <p className="mx-auto mt-2 max-w-56 truncate text-xs text-slate-400 sm:max-w-64">
             {activeModel ? activeModel : "No active model selected"} · Memory{" "}
             {memoryOnline ? "ready" : "idle"}

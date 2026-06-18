@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import ensure_data_dirs, settings
-from routers import agent, chat, models, projects, rag, sentiment, voice
+from routers import agent, chat, models, projects, rag, sentiment, voice, memory, system, research, activity, agents
 
 ensure_data_dirs()
 
@@ -29,6 +29,11 @@ app.include_router(chat.router)
 app.include_router(agent.router)
 app.include_router(sentiment.router)
 app.include_router(voice.router)
+app.include_router(memory.router)
+app.include_router(system.router)
+app.include_router(research.router)
+app.include_router(activity.router)
+app.include_router(agents.router)
 
 
 @app.get("/health")

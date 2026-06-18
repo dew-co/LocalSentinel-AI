@@ -243,6 +243,18 @@ async def chat(payload: ChatRequest):
             f"issues={', '.join(result['detectedIssues']) or 'none'}, recommendedAction={result['recommendedAction']}"
         )
 
+    # Intent routing & Activity logging
+    from services.intent_router_service import intent_router_service
+    from services.activity_service import activity_service
+    intent = intent_router_service.route_intent(payload.message)
+    activity_service.log(
+        project_id=payload.projectId,
+        activity_type="chat_request",
+        title=f"Chat Intent: {intent}",
+        description=f"User asked: {payload.message[:100]}",
+        severity="info"
+    )
+
     quick_answer = fast_companion_answer(payload.message, payload)
     if quick_answer:
         return {

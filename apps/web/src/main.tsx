@@ -14,6 +14,12 @@ import SentimentPage from "./pages/SentimentPage";
 import SettingsPage from "./pages/SettingsPage";
 import "./styles.css";
 
+import { ProjectBrainPage } from "./pages/ProjectBrainPage";
+import { SystemIntelligencePage } from "./pages/SystemIntelligencePage";
+import { ResearchCenterPage } from "./pages/ResearchCenterPage";
+import { ActivityConsolePage } from "./pages/ActivityConsolePage";
+import { AgentMapPage } from "./pages/AgentMapPage";
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Router>
@@ -30,6 +36,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/rag-memory" element={<RagMemoryPage />} />
           <Route path="/sentiment" element={<SentimentPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/project-brain" element={<ProjectBrainPage />} />
+          <Route path="/system-intelligence" element={<SystemIntelligencePage />} />
+          <Route path="/research-center" element={<ResearchCenterPage />} />
+          <Route path="/activity-console" element={<ActivityConsolePage />} />
+          <Route path="/agent-map" element={<AgentMapPage />} />
         </Route>
       </Routes>
     </Router>

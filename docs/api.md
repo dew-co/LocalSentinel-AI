@@ -1,4 +1,4 @@
-# API
+# API Endpoints
 
 Base URL: `http://localhost:8000`
 
@@ -21,6 +21,43 @@ Base URL: `http://localhost:8000`
 - `GET /projects`
 - `GET /projects/{project_id}`
 
+## Multi-Domain Memory
+
+- `GET /api/memory/project/{project_id}`
+- `POST /api/memory/project/{project_id}`
+- `GET /api/memory/search?query=...`
+- `DELETE /api/memory/{memory_id}`
+
+## System Intelligence
+
+- `GET /api/system/status`
+- `POST /api/system/scan`
+- `GET /api/system/tools`
+- `GET /api/system/readiness`
+
+## Research Center
+
+- `POST /api/research/query`
+- `POST /api/research/save`
+- `GET /api/research/history`
+- `GET /api/research/{research_id}`
+- `DELETE /api/research/{research_id}`
+
+## Activity Console
+
+- `GET /api/activity`
+- `GET /api/activity/{project_id}`
+- `POST /api/activity`
+- `DELETE /api/activity/clear`
+
+## Agent Roles
+
+- `GET /api/agents/map`
+- `GET /api/agents/status`
+- `POST /agent/plan` (Legacy agent planner)
+- `POST /agent/preview`
+- `POST /agent/execute`
+
 ## RAG
 
 - `POST /rag/index`
@@ -33,24 +70,17 @@ Base URL: `http://localhost:8000`
 
 - `POST /chat`
 
-Example:
+Chat requests are pre-processed by the Intent Router and Activity Logger before being handed to the Model Router and Ollama.
 
+Example:
 ```json
 {
-  "message": "Explain this project",
+  "message": "Check system environment",
   "projectId": "local-project-id",
-  "useRag": true,
+  "useRag": false,
   "model": "qwen2.5-coder:7b"
 }
 ```
-
-## Agent
-
-- `POST /agent/plan`
-- `POST /agent/preview`
-- `POST /agent/execute`
-
-Execution requires `approved: true`; unsafe commands remain blocked.
 
 ## Sentiment
 

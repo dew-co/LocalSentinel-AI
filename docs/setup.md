@@ -40,7 +40,7 @@ Useful alternatives:
 
 ```bash
 ollama pull deepseek-coder:6.7b
-ollama pull qwen2.5-coder:1.5b
+ollama pull llama3:8b
 ```
 
 LocalSentinel AI checks Ollama at `http://localhost:11434`.

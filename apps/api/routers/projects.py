@@ -13,7 +13,8 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 @router.post("/create")
 def create_project(payload: ProjectCreateRequest):
     try:
-        return project_creator.create(
+        from services.activity_service import activity_service
+        result = project_creator.create(
             idea=payload.idea,
             name=payload.name,
             path=payload.path,
@@ -21,6 +22,8 @@ def create_project(payload: ProjectCreateRequest):
             app_type=payload.appType,
             allow_overwrite=payload.allowOverwrite,
         )
+        activity_service.log(None, "project_created", "Project Created", f"Created project {payload.name} at {payload.path}")
+        return result
     except (ValueError, FileExistsError, FileNotFoundError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -28,7 +31,12 @@ def create_project(payload: ProjectCreateRequest):
 @router.post("/scan")
 def scan_project(payload: ProjectScanRequest):
     try:
-        return project_scanner.scan(payload.path)
+        from services.activity_service import activity_service
+        result = project_scanner.scan(payload.path)
+        # assuming result has a 'project' field
+        proj_id = result.get('project', {}).get('id') if isinstance(result, dict) else None
+        activity_service.log(proj_id, "project_scanned", "Project Scanned", f"Scanned project at {payload.path}")
+        return result
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

@@ -1,43 +1,41 @@
 # LocalSentinel AI
 
-**Local-First Agentic Coding Assistant with Sentiment-Aware Development Prioritization**
+**Local-First Intelligent Development Companion**
 
-LocalSentinel AI is a practical MVP for a local-first coding assistant. It can create starter projects, scan existing codebases, chat with local Ollama models, index project context for RAG, analyze client feedback with VADER sentiment, generate development priority signals, and plan approved agent actions.
-
-The assistant visual is named **Sentinel Core**.
+LocalSentinel AI is a local-first agentic coding command center that helps developers understand, build, debug, research, prioritize, and manage software projects using local AI models, RAG-based memory, system awareness, sentiment-aware prioritization, IDE integration, activity tracking, and a humanoid-style voice companion called **SentinelCore**.
 
 ## Features
 
-- React + TypeScript dashboard with a futuristic dark command-center UI.
-- FastAPI backend with the required health, model, project, RAG, chat, agent, sentiment, and voice endpoints.
-- Ollama status detection, model listing, model selection, pull approval, and model smoke tests.
-- Project creation for React/Vite, React/Firebase placeholder, FastAPI, full-stack React/FastAPI, and static starters.
-- Existing project scanner with stack, language, dependency, package manager, README, and important file detection.
-- Local RAG indexing stored under `data/vector_store`.
-- SQLite metadata and project memory under `data/sqlite`.
-- VADER sentiment analysis with priority rules for urgent development work.
-- Agent planner that creates structured safe plans before changes.
-- Safe executor with preview and approval gates.
-- Browser voice input and speech synthesis MVP.
-- Sentinel Core voice companion layer with Listening, Thinking, Speaking, and Ready states.
-- Assistant settings for voice mode, assistant tone, response length, and voice-memory summaries.
-- Placeholder VS Code extension structure and Continue compatibility documentation.
+- **React + TypeScript Dashboard**: A premium, futuristic dark command-center UI.
+- **FastAPI Backend**: A robust central intelligence layer connecting all systems.
+- **Ollama Integration**: Seamless integration with local models like Qwen Coder and DeepSeek Coder, with fallback routing capabilities.
+- **Multi-Domain Memory System**: Segmented memory modules including Project Brain, User Work Brain, System Brain, Research Brain, and Interaction Brain.
+- **System Intelligence Scanner**: Automatically detects local developer tools, checks versions, and evaluates system readiness without destructive commands.
+- **Research Center**: Ask SentinelCore to analyze external documentation or perform offline local knowledge retrieval.
+- **Activity Console**: A transparent timeline tracking agent decisions, project scans, system checks, and feedback analysis.
+- **Agent Map**: A unified dashboard displaying the active specialized AI modules (Code Reviewer, Frontend Agent, Security Auditor, etc.).
+- **Enhanced SentinelCore Companion**: A voice and visual companion with selectable operational modes: *Think Mode, Research Mode, Code Mode, Companion Mode, System Mode*.
+- **Intent Routing**: Smart request analysis that securely handles standard system queries without unnecessarily blocking on the LLM.
+- **VADER Sentiment Analysis**: Prioritizes user feedback based on sentiment, urgency, and crash reporting keywords.
+- **Project Scanning & Creation**: Generates new project scaffolding and scans existing local codebases.
+- **Safe Executor**: Preview and approval gates for any file modifications or terminal commands.
+- **Local RAG Indexing**: Persistent project indexing using lightweight SQLite and ChromaDB abstractions.
 
 ## Architecture
 
 ```txt
 localsentinel-ai/
   apps/
-    web/
-    api/
-    vscode-extension/
+    web/               React + TypeScript + Vite frontend
+    api/               FastAPI backend
+    vscode-extension/  Future VS Code integration structure
   packages/
-    shared/
+    shared/            Shared constants
   data/
-    projects/
-    vector_store/
-    sqlite/
-  docs/
+    projects/          Reserved local project workspace
+    vector_store/      Local RAG indexes
+    sqlite/            SQLite metadata and memory databases
+  docs/                Product and API documentation
 ```
 
 ## Backend Setup
@@ -51,7 +49,6 @@ uvicorn main:app --reload
 ```
 
 Windows:
-
 ```bash
 .venv\Scripts\activate
 ```
@@ -81,57 +78,39 @@ Recommended model options:
 ```bash
 ollama pull qwen2.5-coder:7b
 ollama pull deepseek-coder:6.7b
-ollama pull qwen2.5-coder:1.5b
+ollama pull llama3:8b
 ```
 
-Use the Models page to select and test the active model.
+Use the Models page or settings to select and test the active coding and fast reasoning models.
 
-## Running the App
+## How to Use
 
-Terminal 1:
-
-```bash
-cd apps/api
-source .venv/bin/activate
-uvicorn main:app --reload
-```
-
-Terminal 2:
-
-```bash
-cd apps/web
-npm run dev
-```
-
-Open `http://localhost:5173`.
+1. **Dashboard**: View overall project health, active models, and recent plans.
+2. **Projects**: Start a new project or scan an existing local directory.
+3. **Project Brain**: View stored memories, architecture decisions, and summaries specific to a project.
+4. **System Intelligence**: Run a system scan to ensure tools like Node, Docker, Git, and Python are detected.
+5. **Research Center**: Save offline notes or trigger SentinelCore to summarize architectural ideas.
+6. **Activity Console**: Review a timeline of all backend events and scans.
+7. **SentinelCore**: Start a chat, engage Voice mode, and select operational states like "Think Mode" or "Code Mode".
 
 ## Safety Modes
 
-- The chat endpoint answers and plans; it does not edit files.
-- Sentinel Core uses friendly, practical assistant language without claiming consciousness, emotions, or human identity.
-- Agent execution requires preview and explicit approval.
-- Destructive commands such as `rm -rf`, `git push`, deploy commands, publish commands, shutdown, reboot, and database drop/delete commands are blocked.
-- Safe commands are still approval-gated.
-- `.env`, private key names, secrets, ignored build folders, and dependency folders are not indexed.
-- Online documentation updates are disabled by default.
+- **Suggestion Mode (Default)**: Reads safe project files, analyzes code, summarizes projects, generates tasks, and prepares plans.
+- SentinelCore never edits, deletes, installs, or commits code automatically without explicit approval.
+- Destructive commands such as `rm -rf`, `git push`, deploy commands, publish commands, shutdown, reboot, and database drop/delete commands are permanently blocked.
+- `.env`, private key names, secrets, ignored build folders, and dependency folders are never indexed.
 
 ## Known Limitations
 
-- RAG writes a lightweight JSON index and mirrors into ChromaDB when the dependency is installed and available.
-- Voice uses browser APIs; unsupported browsers fall back to text chat.
-- Voice summaries are stored in project memory only when enabled and a project is active.
-- The VS Code extension is a placeholder structure.
-- Agent execution is intentionally narrow and allowlisted.
-- Model quality depends on the local Ollama model and machine resources.
+- RAG writes a lightweight JSON index and relies on ChromaDB abstractions (ensure Chroma is available for deep dense retrieval).
+- Online Research Mode falls back to offline project memory unless explicitly wired to an internet search API.
+- Voice mode relies on browser APIs. Unsupported browsers fall back to text.
+- Agent routing relies on the intent engine; complex multi-agent orchestration is planned for a future update.
 
-## Roadmap
+## Future Roadmap
 
-- Add diff-based file modification previews.
-- Add file watching and auto-indexing.
-- Add richer ChromaDB embedding support with fully local embedding models.
-- Implement a Tauri wrapper.
-- Build the VS Code side panel.
-- Add Continue context-provider experiments.
-- Add Whisper.cpp and Piper or Coqui for fully local voice.
-- Add multilingual voice support and explicit opt-in wake word detection.
-- Add test suites for backend services and frontend components.
+- Deep Research capabilities with active online scraping.
+- Full autonomous agent execution loops (Approval Mode & Autonomous Mode).
+- Complete VS Code Side Panel and Continue.dev integration.
+- Desktop CLI / Tauri Wrapper.
+- Whisper.cpp and Piper/Coqui for entirely local, offline wake-word voice detection.

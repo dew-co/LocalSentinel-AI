@@ -1,4 +1,4 @@
-import { Bot, BrainCircuit, FolderKanban, Gauge, Home, MessageSquare, Radar, Settings, ShieldCheck, Sparkles } from "lucide-react";
+import { Activity, Bot, BrainCircuit, Cpu, Database, FolderKanban, Gauge, Home, MessageSquare, Network, Radar, Search, Settings, ShieldCheck, Sparkles } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
@@ -7,6 +7,11 @@ const items = [
   { label: "New Project", to: "/projects/new", icon: Sparkles },
   { label: "Chat", to: "/chat", icon: MessageSquare },
   { label: "Agent Mode", to: "/agent", icon: ShieldCheck },
+  { label: "Project Brain", to: "/project-brain", icon: Database },
+  { label: "System Intelligence", to: "/system-intelligence", icon: Cpu },
+  { label: "Research Center", to: "/research-center", icon: Search },
+  { label: "Activity Console", to: "/activity-console", icon: Activity },
+  { label: "Agent Map", to: "/agent-map", icon: Network },
   { label: "Models", to: "/models", icon: Bot },
   { label: "RAG Memory", to: "/rag-memory", icon: BrainCircuit },
   { label: "Sentiment Radar", to: "/sentiment", icon: Radar },
