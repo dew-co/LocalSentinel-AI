@@ -1,7 +1,6 @@
-import { useState } from "react";
-import ChatPanel from "../components/chat/ChatPanel";
-import SentinelNeuralCompanion from "../components/sentinel/SentinelNeuralCompanion";
-import type { SentinelCoreStatus } from "../components/sentinel/SentinelCore";
+import { useRef, useState } from "react";
+import ChatPanel, { type ChatPanelRef } from "../components/chat/ChatPanel";
+import SentinelCore, { type SentinelCoreStatus } from "../components/sentinel/SentinelCore";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Activity, Database, ShieldCheck, Zap } from "lucide-react";
 
@@ -9,6 +8,7 @@ export default function ChatPage() {
   const [busy, setBusy] = useState(false);
   const [voice, setVoice] = useState(false);
   const [voiceStatus, setVoiceStatus] = useState<SentinelCoreStatus>("Ready");
+  const chatPanelRef = useRef<ChatPanelRef>(null);
 
   const coreStatus = voiceStatus !== "Ready" ? voiceStatus : voice ? "Listening" : busy ? "Thinking" : "Ready";
 
@@ -21,7 +21,7 @@ export default function ChatPage() {
   ];
 
   return (
-    <PageContainer>
+    <PageContainer className="flex-1 min-h-0">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -30,22 +30,34 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_280px]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[280px_1fr_280px] flex-1 min-h-0">
         {/* Left Panel - Neural Companion */}
-        <div className="panel flex flex-col rounded-xl overflow-hidden border border-sentinel-border/80 bg-gradient-to-b from-sentinel-bg/50 to-cyan-950/10 backdrop-blur-sm">
-          <SentinelNeuralCompanion status={coreStatus} />
-        </div>
+        <SentinelCore
+          status={coreStatus}
+          mode="Companion Mode"
+          modelOnline={true}
+          activeModel="qwen2.5-coder:latest"
+          memoryOnline={true}
+          safeMode={true}
+          voiceActive={voice}
+          responding={busy}
+        />
 
         {/* Center Panel - Chat Workspace */}
-        <div className="flex flex-col gap-4">
-          <div className="flex-1">
-             <ChatPanel onBusyChange={setBusy} onVoiceChange={setVoice} onVoiceStatusChange={setVoiceStatus} />
+        <div className="flex flex-col gap-4 flex-1 min-h-0">
+          <div className="flex-1 min-h-0 flex flex-col">
+             <ChatPanel ref={chatPanelRef} onBusyChange={setBusy} onVoiceChange={setVoice} onVoiceStatusChange={setVoiceStatus} />
           </div>
           
           {/* Suggested Commands Strip */}
           <div className="flex flex-wrap gap-2 pt-2">
             {suggestedCommands.map((cmd, i) => (
-              <button key={i} className="rounded-full border border-sentinel-border/50 bg-white/5 px-3 py-1 text-xs text-slate-300 hover:border-cyan-500/30 hover:bg-white/10 hover:text-cyan-300 transition-colors">
+              <button 
+                key={i} 
+                onClick={() => chatPanelRef.current?.sendPrompt(cmd)}
+                className="rounded-full border border-sentinel-border/50 bg-white/5 px-3 py-1 text-xs text-slate-300 hover:border-cyan-500/30 hover:bg-white/10 hover:text-cyan-300 transition-colors"
+                type="button"
+              >
                 {cmd}
               </button>
             ))}

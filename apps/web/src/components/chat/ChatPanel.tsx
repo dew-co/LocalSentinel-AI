@@ -1,5 +1,5 @@
 import { History, Plus, Save, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { api } from "../../lib/api";
 import { chatStorage, type ChatMessage, type ChatSession } from "../../lib/chatStorage";
 import { getSettings } from "../../lib/settings";
@@ -18,7 +18,11 @@ type Props = {
   onVoiceStatusChange?: (status: SentinelCoreStatus) => void;
 };
 
-export default function ChatPanel({ projectId, onBusyChange, onVoiceChange, onVoiceStatusChange }: Props) {
+export interface ChatPanelRef {
+  sendPrompt: (message: string) => void;
+}
+
+const ChatPanel = forwardRef<ChatPanelRef, Props>(({ projectId, onBusyChange, onVoiceChange, onVoiceStatusChange }, ref) => {
   const [session, setSession] = useState<ChatSession>(() => chatStorage.getActive(projectId));
   const [citations, setCitations] = useState<ChatCitation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -125,8 +129,14 @@ export default function ChatPanel({ projectId, onBusyChange, onVoiceChange, onVo
     }
   };
 
+  useImperativeHandle(ref, () => ({
+    sendPrompt: (message: string) => {
+      send(message, "text");
+    }
+  }));
+
   return (
-    <section className="panel flex h-[calc(100dvh-10.5rem)] min-h-[520px] min-w-0 max-h-[900px] flex-col overflow-hidden rounded p-3 sm:h-[calc(100dvh-9rem)] sm:p-4 lg:h-[calc(100dvh-8.5rem)]">
+    <section className="panel flex flex-1 min-h-0 min-w-0 max-h-[900px] flex-col overflow-hidden rounded p-3 sm:p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/50">Conversation</p>
@@ -210,4 +220,6 @@ export default function ChatPanel({ projectId, onBusyChange, onVoiceChange, onVo
       </div>
     </section>
   );
-}
+});
+
+export default ChatPanel;

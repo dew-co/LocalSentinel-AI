@@ -164,23 +164,28 @@ function EnergyArc({ index, total, status }: { index: number; total: number; sta
   const isActive = status !== "Ready";
 
   return (
-    <motion.div
-      className="sentinel-energy-arc"
-      style={{
-        transform: `rotate(${angle}deg)`,
-        background: `linear-gradient(to top, transparent, ${theme.primary})`,
-      }}
-      animate={{
-        opacity: isActive ? [0, 0.8, 0] : [0, 0.3, 0],
-        scaleY: isActive ? [0.3, 1, 0.3] : [0.5, 0.7, 0.5],
-      }}
-      transition={{
-        repeat: Infinity,
-        duration: isActive ? 1.5 + index * 0.15 : 3 + index * 0.3,
-        delay: index * 0.2,
-        ease: "easeInOut",
-      }}
-    />
+    <div className="absolute inset-0 flex items-start justify-center pointer-events-none" style={{ transform: `rotate(${angle}deg)` }}>
+      <motion.div
+        style={{
+          width: "2px",
+          height: "15%",
+          marginTop: "16%",
+          background: `linear-gradient(to top, transparent, ${theme.primary})`,
+          filter: "blur(1px)",
+          borderRadius: "2px"
+        }}
+        animate={{
+          opacity: isActive ? [0, 0.8, 0] : [0, 0.3, 0],
+          scaleY: isActive ? [0.3, 1, 0.3] : [0.5, 0.7, 0.5],
+        }}
+        transition={{
+          repeat: Infinity,
+          duration: isActive ? 1.5 + index * 0.15 : 3 + index * 0.3,
+          delay: index * 0.2,
+          ease: "easeInOut",
+        }}
+      />
+    </div>
   );
 }
 
@@ -188,44 +193,39 @@ function EnergyArc({ index, total, status }: { index: number; total: number; sta
 function DataParticle({ index, ring, status }: { index: number; ring: number; status: SentinelCoreStatus }) {
   const theme = statusThemes[status];
   const isActive = status !== "Ready";
-  const radius = 70 + ring * 28;
-  const startAngle = (index / 6) * 360 + ring * 30;
+  const startAngle = (index / 5) * 360 + ring * 30; // 5 particles per ring
 
   return (
     <motion.div
-      className="sentinel-data-particle"
-      style={{
-        width: isActive ? "4px" : "3px",
-        height: isActive ? "4px" : "3px",
-        background: `rgba(${theme.rgb}, 0.9)`,
-        boxShadow: `0 0 ${isActive ? "8px" : "4px"} rgba(${theme.rgb}, 0.6)`,
-        offsetPath: `circle(${radius}px)`,
-        offsetRotate: "0deg",
-        position: "absolute" as const,
-        borderRadius: "50%",
-        left: "50%",
-        top: "50%",
-        marginLeft: "-2px",
-        marginTop: "-2px",
-      }}
-      animate={{
-        offsetDistance: ["0%", "100%"],
-        opacity: [0.3, 1, 0.3],
-      }}
+      className="absolute inset-0 pointer-events-none"
+      initial={{ rotate: startAngle }}
+      animate={{ rotate: startAngle + 360 }}
       transition={{
-        offsetDistance: {
-          repeat: Infinity,
-          duration: isActive ? 3 + ring * 1.5 : 8 + ring * 3,
-          delay: index * 0.5 + ring * 0.3,
-          ease: "linear",
-        },
-        opacity: {
+        repeat: Infinity,
+        duration: isActive ? 3 + ring * 1.5 : 8 + ring * 3,
+        ease: "linear",
+      }}
+    >
+      <motion.div
+        className="absolute rounded-full"
+        style={{
+          width: isActive ? "4px" : "3px",
+          height: isActive ? "4px" : "3px",
+          background: `rgba(${theme.rgb}, 0.9)`,
+          boxShadow: `0 0 ${isActive ? "8px" : "4px"} rgba(${theme.rgb}, 0.6)`,
+          left: "50%",
+          top: `${25 - ring * 10}%`,
+          marginLeft: "-2px",
+          marginTop: "-2px",
+        }}
+        animate={{ opacity: [0.3, 1, 0.3] }}
+        transition={{
           repeat: Infinity,
           duration: 2,
           delay: index * 0.3,
-        },
-      }}
-    />
+        }}
+      />
+    </motion.div>
   );
 }
 
@@ -304,25 +304,11 @@ export default function SentinelCore({
         aria-hidden="true"
       />
 
-      <div className="relative flex flex-col items-center justify-center">
-        {/* ── Status badges ── */}
-        <div className="absolute left-0 top-0 flex flex-wrap gap-2 text-[10px] uppercase tracking-[0.16em] text-slate-400">
-          <span
-            className={`rounded border px-2 py-1 ${
-              modelOnline
-                ? "border-emerald-300/30 bg-emerald-300/10 text-emerald-100"
-                : "border-rose-300/30 bg-rose-300/10 text-rose-100"
-            }`}
-          >
-            Model {signal}
-          </span>
-          <span className="rounded border border-cyan-300/20 bg-cyan-300/10 px-2 py-1 text-cyan-100">
-            {safeMode ? "Safe Mode" : "Unsafe"}
-          </span>
-        </div>
+      <div className="relative flex flex-col items-center justify-center w-full h-full">
+
 
         {/* ── Main core visualization ── */}
-        <div className="relative grid h-56 w-56 place-items-center sm:h-72 sm:w-72">
+        <div className="relative grid aspect-square w-full max-w-[280px] place-items-center">
 
           {/* Energy arcs radiating from core */}
           {Array.from({ length: 8 }).map((_, i) => (
@@ -335,7 +321,7 @@ export default function SentinelCore({
               key={`ring-${ring}`}
               className="absolute rounded-full border sentinel-orbit-ring"
               style={{
-                inset: `${ring * 26}px`,
+                inset: `${ring * 12}%`,
                 borderColor:
                   isSpeaking
                     ? `rgba(${theme.rgb}, ${0.4 + ring * 0.1})`
@@ -385,7 +371,8 @@ export default function SentinelCore({
           {/* Voice-active ring (green pulse) */}
           {voiceActive && (
             <motion.div
-              className="absolute inset-6 rounded-full border-2 border-sentinel-green/70"
+              className="absolute rounded-full border-2 border-sentinel-green/70"
+              style={{ inset: "10%" }}
               animate={{ scale: [0.85, 1.1, 0.85], opacity: [0.4, 0.95, 0.4] }}
               transition={{ repeat: Infinity, duration: 1.2 }}
             />
@@ -412,8 +399,10 @@ export default function SentinelCore({
 
           {/* Inner glow / aura */}
           <motion.div
-            className="absolute h-24 w-24 rounded-full sm:h-28 sm:w-28"
+            className="absolute rounded-full"
             style={{
+              width: "40%",
+              height: "40%",
               background: `radial-gradient(circle, rgba(${theme.rgb}, 0.3), transparent 70%)`,
               filter: "blur(16px)",
             }}
@@ -433,8 +422,10 @@ export default function SentinelCore({
 
           {/* ── Core sphere ── */}
           <motion.div
-            className="sentinel-core-orb relative grid h-20 w-20 place-items-center rounded-full sm:h-24 sm:w-24"
+            className="sentinel-core-orb relative grid place-items-center rounded-full"
             style={{
+              width: "35%",
+              height: "35%",
               border: `1px solid rgba(${theme.rgb}, 0.8)`,
               background: `rgba(${theme.rgb}, 0.12)`,
             }}
@@ -450,8 +441,10 @@ export default function SentinelCore({
           >
             {/* Inner gradient sphere */}
             <motion.div
-              className="h-10 w-10 rounded-full sm:h-11 sm:w-11"
+              className="rounded-full"
               style={{
+                width: "45%",
+                height: "45%",
                 background: `radial-gradient(circle at 35% 35%, rgba(${theme.rgb}, 0.9), rgba(${theme.rgb}, 0.4) 50%, rgba(${theme.rgb}, 0.15))`,
               }}
               animate={{
@@ -569,19 +562,20 @@ export default function SentinelCore({
         {/* ── Frequency Visualizer ── */}
         <FrequencyVisualizer active={isSpeaking} status={status} />
 
-        {/* ── Status text ── */}
-        <div className="mt-2 text-center">
-          <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/50">Sentinel Core</p>
-          <div className="flex justify-center items-center gap-2 mt-1">
-            <SentinelStatus status={status} />
-            <span className="text-xs border border-white/20 px-2 py-0.5 rounded-full text-white/70">
-              {mode}
-            </span>
+        {/* ── Status Badges ── */}
+        <div className="mt-6 flex flex-wrap justify-center items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded-full px-2.5 py-1">
+            <span className="text-[9px] uppercase tracking-wider text-slate-400">State:</span>
+            <span className={`text-[10px] font-semibold tracking-wider uppercase ${status === "Ready" ? "text-slate-300" : "text-cyan-400"}`}>{status}</span>
           </div>
-          <p className="mx-auto mt-2 max-w-56 truncate text-xs text-slate-400 sm:max-w-64">
-            {activeModel ? activeModel : "No active model selected"} · Memory{" "}
-            {memoryOnline ? "ready" : "idle"}
-          </p>
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded-full px-2.5 py-1">
+            <span className="text-[9px] uppercase tracking-wider text-slate-400">Mode:</span>
+            <span className="text-[10px] font-semibold tracking-wider uppercase text-indigo-300">{mode}</span>
+          </div>
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 rounded-full px-2.5 py-1">
+            <span className="text-[9px] uppercase tracking-wider text-slate-400">Memory:</span>
+            <span className={`text-[10px] font-semibold tracking-wider uppercase ${memoryOnline ? 'text-sentinel-green' : 'text-slate-500'}`}>{memoryOnline ? 'Ready' : 'Idle'}</span>
+          </div>
         </div>
       </div>
     </section>

@@ -36,7 +36,7 @@ export default function AppShell() {
               </NavLink>
             ))}
           </nav>
-          <main className="mx-auto w-full max-w-[1720px] p-3 sm:p-4 md:p-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+          <main className="mx-auto flex w-full max-w-[1720px] flex-col p-3 sm:p-4 md:p-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
             <Outlet />
           </main>
         </div>
