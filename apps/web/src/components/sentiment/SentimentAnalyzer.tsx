@@ -21,46 +21,62 @@ export default function SentimentAnalyzer() {
   };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <section className="panel rounded p-5">
-        <h2 className="mb-4 text-2xl font-semibold">Feedback Analysis</h2>
-        <textarea className="focus-ring min-h-44 w-full rounded border border-sentinel-border bg-sentinel-bg/70 p-3 text-sm" value={text} onChange={(event) => setText(event.target.value)} />
-        <button className="focus-ring mt-4 inline-flex items-center gap-2 rounded bg-sentinel-cyan px-4 py-2 font-medium text-sentinel-bg" onClick={analyze} disabled={loading}>
-          {loading ? <Loader2 className="animate-spin" size={18} /> : <Radar size={18} />}
-          Analyze
-        </button>
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <section className="panel rounded-xl border border-sentinel-border/50 bg-gradient-to-br from-white/5 to-transparent p-6 shadow-xl flex flex-col">
+        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-300">Feedback Input Matrix</h3>
+        <textarea 
+          className="min-h-44 w-full rounded-lg border border-sentinel-border bg-black/40 p-4 text-sm text-white shadow-inner focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50" 
+          value={text} 
+          onChange={(event) => setText(event.target.value)} 
+          placeholder="Paste user feedback, bug reports, or communications here..."
+        />
+        
+        <div className="mt-4 flex justify-end">
+          <button 
+            className="flex items-center gap-2 rounded bg-cyan-500 px-6 py-2.5 font-semibold text-slate-900 transition-all hover:bg-cyan-400 hover:shadow-[0_0_15px_rgba(53,231,255,0.4)] disabled:opacity-50 disabled:hover:shadow-none" 
+            onClick={analyze} 
+            disabled={loading || !text}
+          >
+            {loading ? <Loader2 className="animate-spin" size={18} /> : <Radar size={18} />}
+            {loading ? "Analyzing Matrix..." : "Analyze Sentiment"}
+          </button>
+        </div>
+
         {result && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Metric label="Sentiment" value={result.sentiment} />
-            <Metric label="Compound" value={String(result.compoundScore)} />
-            <Metric label="Urgency" value={result.urgency} />
-            <Metric label="Priority" value={result.priority} />
-            <div className="sm:col-span-2 mt-2">
-              <button 
-                onClick={async () => {
-                  try {
-                    await fetch('http://localhost:8000/api/tasks/', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        title: "Feedback Task",
-                        description: text,
-                        priority: result.priority,
-                        issue_category: "Feedback",
-                        sentiment_source: result.sentiment,
-                        status: "Backlog"
-                      })
-                    });
-                    navigate('/task-board');
-                  } catch (err) {
-                    console.error("Failed to create task", err);
-                  }
-                }}
-                className="flex w-full justify-center items-center gap-2 rounded bg-cyan-900/40 hover:bg-cyan-900/60 border border-cyan-500/50 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors"
-              >
-                <FolderKanban size={16} />
-                Create Task from Feedback
-              </button>
+          <div className="mt-8">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-slate-300 border-b border-sentinel-border/30 pb-2">Analysis Results</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Metric label="Sentiment" value={result.sentiment} highlight={result.sentiment === 'Negative' ? 'text-sentinel-rose' : result.sentiment === 'Positive' ? 'text-sentinel-green' : 'text-cyan-400'} />
+              <Metric label="Compound" value={String(result.compoundScore)} highlight="text-white" />
+              <Metric label="Urgency" value={result.urgency} highlight={result.urgency === 'High' ? 'text-sentinel-rose' : 'text-white'} />
+              <Metric label="Priority" value={result.priority} highlight={result.priority === 'Critical' || result.priority === 'High' ? 'text-sentinel-amber' : 'text-white'} />
+              <div className="sm:col-span-2 mt-4">
+                <button 
+                  onClick={async () => {
+                    try {
+                      await fetch('http://localhost:8000/api/tasks/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          title: "Feedback Task",
+                          description: text,
+                          priority: result.priority,
+                          issue_category: "Feedback",
+                          sentiment_source: result.sentiment,
+                          status: "Backlog"
+                        })
+                      });
+                      navigate('/task-board');
+                    } catch (err) {
+                      console.error("Failed to create task", err);
+                    }
+                  }}
+                  className="flex w-full justify-center items-center gap-2 rounded bg-cyan-900/40 hover:bg-cyan-900/60 border border-cyan-500/50 px-4 py-3 text-sm font-medium text-cyan-100 transition-colors shadow-sm"
+                >
+                  <FolderKanban size={16} />
+                  Convert to Actionable Task
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -70,11 +86,11 @@ export default function SentimentAnalyzer() {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, highlight = "text-white" }: { label: string; value: string, highlight?: string }) {
   return (
-    <div className="rounded border border-sentinel-border bg-white/5 p-3">
-      <p className="text-xs uppercase tracking-[0.18em] text-cyan-200/50">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
+    <div className="rounded border border-sentinel-border/50 bg-black/30 p-4 transition-colors hover:border-cyan-500/30">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 mb-1">{label}</p>
+      <p className={`text-lg font-bold ${highlight}`}>{value}</p>
     </div>
   );
 }

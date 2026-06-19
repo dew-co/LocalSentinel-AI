@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '../components/layout/PageContainer';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
+import { Database, Filter, Search, Tag } from 'lucide-react';
 
 export function ProjectBrainPage() {
   const [memory, setMemory] = useState<any[]>([]);
@@ -13,35 +12,67 @@ export function ProjectBrainPage() {
         if (data.status === 'ok') {
           setMemory(data.results || []);
         }
-      });
+      }).catch(() => undefined);
   }, []);
 
   return (
     <PageContainer>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Project Brain</h1>
-        <p className="text-gray-400">Stores project-specific intelligence and memories.</p>
+      {/* Header Section */}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Project Brain</h1>
+          <p className="mt-1 flex items-center gap-2 text-sm text-slate-400">
+            <Database size={14} className="text-cyan-400" /> 
+            Context & Memory Browser
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input 
+              type="text" 
+              placeholder="Search memory..." 
+              className="w-full rounded border border-sentinel-border bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50"
+            />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          </div>
+          <button className="flex items-center gap-2 rounded border border-sentinel-border bg-white/5 px-3 py-2 text-sm text-slate-300 hover:bg-white/10 hover:text-white transition-colors">
+            <Filter size={14} /> Filter
+          </button>
+        </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {memory.map((item, idx) => (
-          <Card key={idx}>
-            <CardHeader>
-              <CardTitle className="text-lg">{item.title || 'Memory Item'}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-gray-300">{item.content}</p>
-              <div className="mt-2 flex gap-2">
-                <Badge>{item.memory_type}</Badge>
-                {item.tags?.map((t: string, i: number) => (
-                  <Badge key={i} variant="outline">{t}</Badge>
+          <div key={idx} className="panel flex flex-col rounded-xl p-5 border border-sentinel-border/50 bg-gradient-to-br from-white/5 to-transparent hover:border-cyan-500/30 transition-all group">
+            <div className="mb-3 flex items-start justify-between">
+              <h3 className="font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                {item.title || 'Memory Item'}
+              </h3>
+              <span className="shrink-0 rounded bg-cyan-950/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-cyan-400 border border-cyan-500/20">
+                {item.memory_type || 'General'}
+              </span>
+            </div>
+            
+            <p className="text-sm text-slate-300 line-clamp-4 flex-1 mb-4">
+              {item.content}
+            </p>
+            
+            {item.tags && item.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-3 border-t border-sentinel-border/30">
+                {item.tags.map((t: string, i: number) => (
+                  <span key={i} className="flex items-center gap-1 rounded bg-black/30 px-2 py-1 text-[10px] text-slate-400 border border-white/5">
+                    <Tag size={10} /> {t}
+                  </span>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         ))}
         {memory.length === 0 && (
-          <p className="text-gray-500">No memory items found.</p>
+          <div className="col-span-full py-12 text-center flex flex-col items-center">
+            <Database size={32} className="mb-3 text-slate-600 opacity-50" />
+            <p className="text-slate-400">No memory items found in the Project Brain.</p>
+          </div>
         )}
       </div>
     </PageContainer>

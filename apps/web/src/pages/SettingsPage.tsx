@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { defaultSettings, saveSettings, SETTINGS_KEY, type LocalSentinelSettings } from "../lib/settings";
+import { PageContainer } from "../components/layout/PageContainer";
+import { Settings2, Cpu, Mic, Zap, Shield } from "lucide-react";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(defaultSettings);
@@ -16,31 +18,87 @@ export default function SettingsPage() {
   };
 
   return (
-    <section className="panel mx-auto max-w-4xl rounded p-5">
-      <h2 className="mb-5 text-2xl font-semibold">Settings</h2>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Text label="Ollama base URL" value={settings.ollamaBaseUrl} onChange={(value) => update("ollamaBaseUrl", value)} />
-        <Text label="Active model" value={settings.activeModel} onChange={(value) => update("activeModel", value)} />
-        <Text label="Default project path" value={settings.defaultProjectPath} onChange={(value) => update("defaultProjectPath", value)} />
-        <Toggle label="Safe mode" checked={settings.safeMode} onChange={(value) => update("safeMode", value)} />
-        <Toggle label="Voice mode" checked={settings.voiceMode} onChange={(value) => update("voiceMode", value)} />
-        <Toggle label="Store voice summaries in memory" checked={settings.voiceMemory} onChange={(value) => update("voiceMemory", value)} />
-        <Select label="Assistant tone" value={settings.assistantTone} options={["friendly", "calm", "concise", "teacher"]} onChange={(value) => update("assistantTone", value)} />
-        <Select label="Response length" value={settings.responseLength} options={["brief", "balanced", "detailed"]} onChange={(value) => update("responseLength", value)} />
-        <Toggle label="RAG indexing" checked={settings.ragEnabled} onChange={(value) => update("ragEnabled", value)} />
-        <Toggle label="Auto-index changed files" checked={settings.autoIndex} onChange={(value) => update("autoIndex", value)} />
-        <Toggle label="Auto-install approved models" checked={settings.autoInstallModels} onChange={(value) => update("autoInstallModels", value)} />
-        <Toggle label="Online documentation updates" checked={settings.onlineDocs} onChange={(value) => update("onlineDocs", value)} />
+    <PageContainer>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">System Configuration</h1>
+        <p className="mt-1 flex items-center gap-2 text-sm text-slate-400">
+          <Settings2 size={14} className="text-cyan-400" />
+          Manage global preferences and Sentinel behaviors
+        </p>
       </div>
-    </section>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Core System */}
+        <section className="panel rounded-xl border border-sentinel-border/50 bg-gradient-to-br from-white/5 to-transparent p-6 shadow-xl">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-300 border-b border-sentinel-border/30 pb-2">
+            <Cpu size={16} className="text-cyan-400" /> Core Engine
+          </h3>
+          <div className="space-y-4">
+            <Text label="Ollama base URL" value={settings.ollamaBaseUrl} onChange={(value) => update("ollamaBaseUrl", value)} />
+            <Text label="Active model" value={settings.activeModel} onChange={(value) => update("activeModel", value)} />
+            <Text label="Default project path" value={settings.defaultProjectPath} onChange={(value) => update("defaultProjectPath", value)} />
+          </div>
+        </section>
+
+        {/* Behavior & Voice */}
+        <section className="panel rounded-xl border border-sentinel-border/50 bg-gradient-to-br from-white/5 to-transparent p-6 shadow-xl">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-300 border-b border-sentinel-border/30 pb-2">
+            <Mic size={16} className="text-indigo-400" /> Interface & Voice
+          </h3>
+          <div className="space-y-4">
+            <Select label="Assistant tone" value={settings.assistantTone} options={["friendly", "calm", "concise", "teacher"]} onChange={(value) => update("assistantTone", value)} />
+            <Select label="Response length" value={settings.responseLength} options={["brief", "balanced", "detailed"]} onChange={(value) => update("responseLength", value)} />
+            <div className="pt-2 space-y-3">
+              <Toggle label="Voice mode enabled" checked={settings.voiceMode} onChange={(value) => update("voiceMode", value)} />
+              <Toggle label="Store voice summaries in memory" checked={settings.voiceMemory} onChange={(value) => update("voiceMemory", value)} />
+            </div>
+          </div>
+        </section>
+
+        {/* Memory & Automation */}
+        <section className="panel rounded-xl border border-sentinel-border/50 bg-gradient-to-br from-white/5 to-transparent p-6 shadow-xl">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-300 border-b border-sentinel-border/30 pb-2">
+            <Zap size={16} className="text-amber-400" /> Memory & Automation
+          </h3>
+          <div className="space-y-3">
+            <Toggle label="RAG indexing engine" checked={settings.ragEnabled} onChange={(value) => update("ragEnabled", value)} />
+            <Toggle label="Auto-index changed files" checked={settings.autoIndex} onChange={(value) => update("autoIndex", value)} />
+            <Toggle label="Auto-install approved models" checked={settings.autoInstallModels} onChange={(value) => update("autoInstallModels", value)} />
+            <Toggle label="Online documentation updates" checked={settings.onlineDocs} onChange={(value) => update("onlineDocs", value)} />
+          </div>
+        </section>
+
+        {/* Security */}
+        <section className="panel rounded-xl border border-sentinel-border/50 bg-gradient-to-br from-sentinel-rose/5 to-transparent p-6 shadow-xl">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-sentinel-rose border-b border-sentinel-border/30 pb-2">
+            <Shield size={16} /> Security Constraints
+          </h3>
+          <div className="space-y-3">
+            <Toggle 
+              label="Safe mode (require approval for all actions)" 
+              checked={settings.safeMode} 
+              onChange={(value) => update("safeMode", value)} 
+              highlight={settings.safeMode ? "text-sentinel-green" : "text-sentinel-rose"}
+            />
+            <p className="text-xs text-slate-500 leading-relaxed">
+              When Safe Mode is disabled, LocalSentinel may execute terminal commands, modify files, and access external services without explicit user approval. Proceed with caution.
+            </p>
+          </div>
+        </section>
+      </div>
+    </PageContainer>
   );
 }
 
 function Text({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
-      <input className="focus-ring w-full rounded border border-sentinel-border bg-sentinel-bg/70 px-3 py-2" value={value} onChange={(event) => onChange(event.target.value)} />
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+      <input 
+        className="w-full rounded border border-sentinel-border bg-black/40 px-3 py-2 text-white focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all" 
+        value={value} 
+        onChange={(event) => onChange(event.target.value)} 
+      />
     </label>
   );
 }
@@ -48,10 +106,14 @@ function Text({ label, value, onChange }: { label: string; value: string; onChan
 function Select({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
   return (
     <label className="block text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
-      <select className="focus-ring w-full rounded border border-sentinel-border bg-sentinel-bg/70 px-3 py-2" value={value} onChange={(event) => onChange(event.target.value)}>
+      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">{label}</span>
+      <select 
+        className="w-full rounded border border-sentinel-border bg-black/40 px-3 py-2 text-white appearance-none focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all" 
+        value={value} 
+        onChange={(event) => onChange(event.target.value)}
+      >
         {options.map((option) => (
-          <option key={option} value={option}>
+          <option key={option} value={option} className="bg-slate-900 capitalize">
             {option}
           </option>
         ))}
@@ -60,11 +122,14 @@ function Select({ label, value, options, onChange }: { label: string; value: str
   );
 }
 
-function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
+function Toggle({ label, checked, onChange, highlight = "text-white" }: { label: string; checked: boolean; onChange: (value: boolean) => void; highlight?: string }) {
   return (
-    <label className="flex items-center justify-between rounded border border-sentinel-border bg-white/5 px-3 py-2 text-sm">
-      <span>{label}</span>
-      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+    <label className="flex items-center justify-between rounded border border-sentinel-border/50 bg-black/20 px-4 py-3 text-sm cursor-pointer transition-colors hover:bg-black/40 hover:border-cyan-500/30">
+      <span className={`font-medium ${highlight}`}>{label}</span>
+      <div className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${checked ? 'bg-cyan-500' : 'bg-slate-600'}`}>
+        <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : 'translate-x-1'}`} />
+      </div>
+      <input type="checkbox" className="hidden" checked={checked} onChange={(event) => onChange(event.target.checked)} />
     </label>
   );
 }
