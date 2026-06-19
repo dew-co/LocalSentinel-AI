@@ -12,6 +12,7 @@ const items = [
   { label: "Research Center", to: "/research-center", icon: Search },
   { label: "Activity Console", to: "/activity-console", icon: Activity },
   { label: "Agent Map", to: "/agent-map", icon: Network },
+  { label: "Task Board", to: "/task-board", icon: FolderKanban },
   { label: "Models", to: "/models", icon: Bot },
   { label: "RAG Memory", to: "/rag-memory", icon: BrainCircuit },
   { label: "Sentiment Radar", to: "/sentiment", icon: Radar },

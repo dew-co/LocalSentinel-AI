@@ -19,6 +19,7 @@ import { SystemIntelligencePage } from "./pages/SystemIntelligencePage";
 import { ResearchCenterPage } from "./pages/ResearchCenterPage";
 import { ActivityConsolePage } from "./pages/ActivityConsolePage";
 import { AgentMapPage } from "./pages/AgentMapPage";
+import { TaskBoardPage } from "./pages/TaskBoardPage";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -41,6 +42,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/research-center" element={<ResearchCenterPage />} />
           <Route path="/activity-console" element={<ActivityConsolePage />} />
           <Route path="/agent-map" element={<AgentMapPage />} />
+          <Route path="/task-board" element={<TaskBoardPage />} />
         </Route>
       </Routes>
     </Router>

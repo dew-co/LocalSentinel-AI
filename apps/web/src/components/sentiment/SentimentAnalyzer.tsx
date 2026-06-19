@@ -1,5 +1,6 @@
-import { Loader2, Radar } from "lucide-react";
+import { Loader2, Radar, FolderKanban } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import type { SentimentResult } from "../../types/api";
 import PriorityRadar from "./PriorityRadar";
@@ -8,6 +9,7 @@ export default function SentimentAnalyzer() {
   const [text, setText] = useState("The app keeps crashing after login and the client is very frustrated.");
   const [result, setResult] = useState<SentimentResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const analyze = async () => {
     setLoading(true);
@@ -33,6 +35,33 @@ export default function SentimentAnalyzer() {
             <Metric label="Compound" value={String(result.compoundScore)} />
             <Metric label="Urgency" value={result.urgency} />
             <Metric label="Priority" value={result.priority} />
+            <div className="sm:col-span-2 mt-2">
+              <button 
+                onClick={async () => {
+                  try {
+                    await fetch('http://localhost:8000/api/tasks/', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        title: "Feedback Task",
+                        description: text,
+                        priority: result.priority,
+                        issue_category: "Feedback",
+                        sentiment_source: result.sentiment,
+                        status: "Backlog"
+                      })
+                    });
+                    navigate('/task-board');
+                  } catch (err) {
+                    console.error("Failed to create task", err);
+                  }
+                }}
+                className="flex w-full justify-center items-center gap-2 rounded bg-cyan-900/40 hover:bg-cyan-900/60 border border-cyan-500/50 px-4 py-2 text-sm font-medium text-cyan-100 transition-colors"
+              >
+                <FolderKanban size={16} />
+                Create Task from Feedback
+              </button>
+            </div>
           </div>
         )}
       </section>

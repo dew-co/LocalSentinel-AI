@@ -132,6 +132,24 @@ class Database:
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS tasks (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    description TEXT,
+                    priority TEXT,
+                    issue_category TEXT,
+                    sentiment_source TEXT,
+                    project_id TEXT,
+                    suggested_files_json TEXT DEFAULT '[]',
+                    status TEXT,
+                    ai_recommendation TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
 
     def upsert_project(
         self,
@@ -405,5 +423,47 @@ class Database:
         with self.connect() as conn:
             rows = conn.execute("SELECT * FROM agent_roles ORDER BY name").fetchall()
         return [dict(row) for row in rows]
+
+    def create_task(self, title: str, description: str, priority: str, issue_category: str, sentiment_source: str, project_id: str, suggested_files: list[str], status: str, ai_recommendation: str) -> dict[str, Any]:
+        task_id = str(uuid.uuid4())
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO tasks (id, title, description, priority, issue_category, sentiment_source, project_id, suggested_files_json, status, ai_recommendation, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (task_id, title, description, priority, issue_category, sentiment_source, project_id, json.dumps(suggested_files), status, ai_recommendation, now, now)
+            )
+        return self.get_task(task_id) or {}
+
+    def get_task(self, task_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if not row:
+            return None
+        d = dict(row)
+        d["suggested_files"] = json.loads(d["suggested_files_json"] or "[]")
+        return d
+
+    def list_tasks(self) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT * FROM tasks ORDER BY created_at DESC").fetchall()
+        result = []
+        for row in rows:
+            d = dict(row)
+            d["suggested_files"] = json.loads(d["suggested_files_json"] or "[]")
+            result.append(d)
+        return result
+
+    def update_task_status(self, task_id: str, status: str) -> dict[str, Any] | None:
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute("UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?", (status, now, task_id))
+        return self.get_task(task_id)
+
+    def delete_task(self, task_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
 
 db = Database()
