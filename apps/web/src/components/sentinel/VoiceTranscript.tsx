@@ -5,16 +5,17 @@ import type { VoiceRuntimeStatus, VoiceTranscriptEntry } from "../../lib/voiceSe
 type Props = {
   entries: VoiceTranscriptEntry[];
   status: VoiceRuntimeStatus;
+  className?: string;
 };
 
-export default function VoiceTranscript({ entries, status }: Props) {
+export default function VoiceTranscript({ entries, status, className = "" }: Props) {
   const [open, setOpen] = useState(false);
   const latest = entries.length > 0 ? entries[entries.length - 1] : undefined;
 
   return (
-    <div className="rounded border border-sentinel-border bg-white/5 text-sm text-slate-300">
-      <button className="focus-ring flex w-full items-center justify-between gap-3 px-3 py-2 text-left" type="button" onClick={() => setOpen((value) => !value)}>
-        <span className="min-w-0">
+    <div className={`min-w-0 overflow-hidden rounded border border-sentinel-border bg-white/5 text-sm text-slate-300 ${className}`}>
+      <button className="focus-ring flex w-full min-w-0 items-center justify-between gap-3 px-3 py-2 text-left" type="button" onClick={() => setOpen((value) => !value)}>
+        <span className="min-w-0 flex-1">
           <span className="block text-xs uppercase tracking-[0.18em] text-cyan-200/50">Voice Transcript</span>
           {!open && (
             <span className="mt-1 block max-w-full truncate text-xs text-slate-500">
@@ -33,7 +34,7 @@ export default function VoiceTranscript({ entries, status }: Props) {
             <p className="min-h-6">No voice input captured.</p>
           ) : (
             entries.map((entry) => (
-              <p key={entry.id} className="leading-5">
+              <p key={entry.id} className="leading-5 [overflow-wrap:anywhere]">
                 <span className={entry.role === "user" ? "text-sentinel-green" : entry.role === "assistant" ? "text-sentinel-cyan" : "text-sentinel-amber"}>
                   {entry.role === "user" ? "You" : entry.role === "assistant" ? "Sentinel" : "System"}:
                 </span>{" "}

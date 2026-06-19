@@ -13,7 +13,7 @@ const menuGroups = [
   {
     title: "Sentinel",
     items: [
-      { label: "Sentinel Core Chat", to: "/chat", icon: MessageSquare },
+      { label: "Sentinel Core", to: "/chat", icon: MessageSquare },
       { label: "Agent Mode", to: "/agent", icon: ShieldCheck },
       { label: "Project Brain", to: "/project-brain", icon: Database },
     ]

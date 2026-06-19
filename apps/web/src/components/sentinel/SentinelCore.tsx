@@ -279,7 +279,7 @@ export default function SentinelCore({
 
   return (
     <section
-      className="panel sentinel-core-section relative grid min-h-[320px] overflow-hidden rounded p-4 sm:min-h-[386px] sm:p-6"
+      className="panel sentinel-core-section relative grid min-h-[320px] min-w-0 overflow-hidden rounded p-4 sm:min-h-[386px] sm:p-6"
       aria-label={`Sentinel Core status ${status}`}
     >
       {/* ── Ambient background grid ── */}

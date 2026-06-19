@@ -18,9 +18,9 @@ export default function PromptInput({ disabled, onSend }: Props) {
   };
 
   return (
-    <form onSubmit={submit} className="flex items-end gap-2">
+    <form onSubmit={submit} className="flex min-w-0 items-end gap-2">
       <textarea
-        className="focus-ring scrollbar-thin min-h-12 max-h-32 flex-1 resize-none overflow-y-auto rounded border border-sentinel-border bg-sentinel-bg/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
+        className="focus-ring scrollbar-thin min-h-12 max-h-32 min-w-0 flex-1 resize-none overflow-y-auto rounded border border-sentinel-border bg-sentinel-bg/70 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500"
         placeholder="Ask Sentinel Core..."
         value={message}
         onChange={(event) => setMessage(event.target.value)}

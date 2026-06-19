@@ -8,7 +8,7 @@ const pageDetails: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Command Center", subtitle: "LocalSentinel AI Operations" },
   "/projects": { title: "Projects", subtitle: "Manage local repositories" },
   "/projects/new": { title: "New Project", subtitle: "Initialize new codebase" },
-  "/chat": { title: "Sentinel Core Chat", subtitle: "Primary neural companion" },
+  "/chat": { title: "Sentinel Core", subtitle: "Main conversational control room for your AI companion." },
   "/agent": { title: "Agent Mode", subtitle: "Autonomous task execution" },
   "/project-brain": { title: "Project Brain", subtitle: "Context & memory browser" },
   "/system-intelligence": { title: "System Intelligence", subtitle: "Runtime & readiness dashboard" },
