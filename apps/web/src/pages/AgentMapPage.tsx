@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { Cpu, Activity, Clock, Shield, Database, Layout, Code, Server, TestTube, FileText, Search, Brain, Zap, Key, Users } from 'lucide-react';
+import { Cpu, Activity, Clock, Shield, Database, Layout, Code, Server, TestTube, FileText, Search, Brain, Zap, Key, Users, X, ChevronLeft } from 'lucide-react';
 
 export function AgentMapPage() {
   const [agents, setAgents] = useState<any[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:8000/api/agents/map')
@@ -14,8 +15,6 @@ export function AgentMapPage() {
       .then(data => {
         if (data.status === 'ok') {
           setAgents(data.agents);
-          const root = data.agents.find((a: any) => a.name === 'Sentinel Lead Agent');
-          if (root) setSelectedAgent(root);
         }
       });
   }, []);
@@ -64,7 +63,10 @@ export function AgentMapPage() {
     
     return (
       <div 
-        onClick={() => setSelectedAgent(agent)}
+        onClick={() => {
+          setSelectedAgent(agent);
+          setDetailsOpen(true);
+        }}
         className={`relative cursor-pointer transition-all duration-300 transform hover:scale-105 ${
           isRoot ? 'w-80 z-10' : 'w-full z-10'
         }`}
@@ -110,6 +112,15 @@ export function AgentMapPage() {
     </div>
   );
 
+  const selectedCapabilities = (() => {
+    if (!selectedAgent?.capabilities_json) return [];
+    try {
+      return JSON.parse(selectedAgent.capabilities_json);
+    } catch {
+      return [];
+    }
+  })();
+
   return (
     <PageContainer>
       <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -123,9 +134,9 @@ export function AgentMapPage() {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-160px)]">
+      <div className="relative h-[calc(100vh-160px)] overflow-hidden">
         {/* Tree Visualization Area */}
-        <div className="flex-1 overflow-auto rounded-xl border border-sentinel-border/80 bg-gradient-to-b from-sentinel-bg/50 to-cyan-950/10 backdrop-blur-sm p-8 relative">
+        <div className="h-full overflow-auto rounded-xl border border-sentinel-border/80 bg-gradient-to-b from-sentinel-bg/50 to-cyan-950/10 backdrop-blur-sm p-8 relative">
           <div className="min-w-[900px] flex flex-col items-center">
             
             {/* Root */}
@@ -153,11 +164,37 @@ export function AgentMapPage() {
           </div>
         </div>
 
-        {/* Details Panel */}
-        {selectedAgent && (
-          <Card className="w-full lg:w-96 shrink-0 border border-sentinel-border/80 bg-sentinel-bg/90 backdrop-blur-md overflow-auto shadow-2xl">
+        {detailsOpen && selectedAgent && (
+          <button
+            className="absolute inset-0 z-20 bg-black/30 backdrop-blur-[1px] lg:hidden"
+            onClick={() => setDetailsOpen(false)}
+            type="button"
+            aria-label="Close agent details overlay"
+          />
+        )}
+
+        {selectedAgent && !detailsOpen && (
+          <button
+            className="absolute right-0 top-1/2 z-30 flex -translate-y-1/2 items-center gap-2 rounded-l border border-r-0 border-cyan-500/30 bg-sentinel-bg/95 px-3 py-2 text-xs font-medium uppercase tracking-wider text-cyan-200 shadow-2xl backdrop-blur-md hover:bg-cyan-500/10"
+            onClick={() => setDetailsOpen(true)}
+            type="button"
+          >
+            <ChevronLeft size={14} />
+            Details
+          </button>
+        )}
+
+        {/* Details Drawer */}
+        <aside
+          className={`absolute right-0 top-0 z-30 h-full w-full max-w-md transform transition-all duration-300 ease-out ${
+            detailsOpen && selectedAgent ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none'
+          }`}
+          aria-hidden={!detailsOpen}
+        >
+          {selectedAgent && (
+          <Card className="h-full w-full overflow-auto rounded-l-xl rounded-r-xl border border-sentinel-border/80 bg-sentinel-bg/95 shadow-[-24px_0_60px_rgba(0,0,0,0.45)] backdrop-blur-md lg:rounded-r-none">
             <CardHeader className="border-b border-sentinel-border/50 pb-4">
-              <div className="flex justify-between items-start">
+              <div className="flex justify-between items-start gap-3">
                 <div>
                   <CardTitle className="text-lg text-cyan-400 flex items-center gap-2">
                     {getIconForAgent(selectedAgent.name)}
@@ -165,7 +202,18 @@ export function AgentMapPage() {
                   </CardTitle>
                   <div className="text-[11px] text-cyan-500/70 mt-1.5 font-mono uppercase tracking-wider">{selectedAgent.role}</div>
                 </div>
-                <div className={`w-2.5 h-2.5 rounded-full mt-1.5 ${getStatusColor(selectedAgent.state)}`} />
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full ${getStatusColor(selectedAgent.state)}`} />
+                  <button
+                    className="grid h-8 w-8 place-items-center rounded border border-sentinel-border bg-white/5 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                    onClick={() => setDetailsOpen(false)}
+                    type="button"
+                    title="Collapse details"
+                    aria-label="Collapse agent details"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pt-6 space-y-6">
@@ -177,11 +225,11 @@ export function AgentMapPage() {
                 </p>
               </div>
 
-              {selectedAgent.capabilities_json && JSON.parse(selectedAgent.capabilities_json).length > 0 && (
+              {selectedCapabilities.length > 0 && (
                 <div>
                   <h4 className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 font-semibold">Capabilities</h4>
                   <div className="flex flex-wrap gap-1.5">
-                    {JSON.parse(selectedAgent.capabilities_json).map((cap: string, i: number) => (
+                    {selectedCapabilities.map((cap: string, i: number) => (
                       <span key={i} className="rounded border border-cyan-500/20 bg-cyan-950/30 px-2 py-1 text-[10px] text-cyan-200">
                         {cap}
                       </span>
@@ -226,7 +274,8 @@ export function AgentMapPage() {
 
             </CardContent>
           </Card>
-        )}
+          )}
+        </aside>
       </div>
     </PageContainer>
   );

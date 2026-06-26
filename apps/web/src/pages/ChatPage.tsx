@@ -1,9 +1,10 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ChatPanel, { type ChatPanelRef } from "../components/chat/ChatPanel";
 import SentinelCore, { type SentinelCoreStatus } from "../components/sentinel/SentinelCore";
 import VoiceTranscript from "../components/sentinel/VoiceTranscript";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Activity, Database, ShieldCheck, Zap } from "lucide-react";
+import { api } from "../lib/api";
 import type { VoiceRuntimeStatus, VoiceTranscriptEntry } from "../lib/voiceService";
 
 export default function ChatPage() {
@@ -12,6 +13,7 @@ export default function ChatPage() {
   const [voiceStatus, setVoiceStatus] = useState<SentinelCoreStatus>("Ready");
   const [transcriptEntries, setTranscriptEntries] = useState<VoiceTranscriptEntry[]>([]);
   const [transcriptStatus, setTranscriptStatus] = useState<VoiceRuntimeStatus>("Ready");
+  const [intelligenceStatus, setIntelligenceStatus] = useState<any>(null);
   const chatPanelRef = useRef<ChatPanelRef>(null);
 
   const coreStatus = voiceStatus !== "Ready" ? voiceStatus : voice ? "Listening" : busy ? "Thinking" : "Ready";
@@ -21,12 +23,19 @@ export default function ChatPage() {
     setTranscriptStatus(status);
   }, []);
 
+  useEffect(() => {
+    api.intelligenceStatus()
+      .then(setIntelligenceStatus)
+      .catch(() => undefined);
+  }, []);
+
   const suggestedCommands = [
     "Think through this idea",
-    "Research the best approach",
-    "Find possible bugs",
-    "Analyze this feedback",
-    "Check my system tools"
+    "What intelligence do you have about this project?",
+    "Update my local intelligence cache",
+    "Use offline knowledge only",
+    "What did you learn from my recent work?",
+    "What should I refresh when online?"
   ];
 
   return (
@@ -91,11 +100,11 @@ export default function ChatPage() {
               <div className="min-w-0 rounded border border-sentinel-border bg-black/30 p-3">
                 <span className="block text-[10px] uppercase text-slate-500 mb-1">Memory Utilization</span>
                 <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-1">
-                  <div className="bg-sentinel-green h-full w-[45%]"></div>
+                  <div className="bg-sentinel-green h-full" style={{ width: `${Math.min(100, (intelligenceStatus?.cached_items ?? 0) * 4)}%` }}></div>
                 </div>
                 <div className="flex justify-between text-xs text-slate-400">
-                  <span>45%</span>
-                  <span>1.2 GB / 8 GB</span>
+                  <span>{intelligenceStatus?.cached_items ?? 0} cached items</span>
+                  <span>{intelligenceStatus?.offline_cache_ready ? "Cache ready" : "No cache"}</span>
                 </div>
               </div>
             </div>
@@ -115,6 +124,12 @@ export default function ChatPage() {
               <div className="flex min-w-0 items-center justify-between gap-2 rounded border border-cyan-500/20 bg-cyan-950/20 p-2">
                 <span className="flex items-center gap-2 text-slate-400"><ShieldCheck size={14} className="text-cyan-400" /> Safety</span>
                 <span className="text-cyan-400 font-medium">Enforced</span>
+              </div>
+              <div className="flex min-w-0 items-center justify-between gap-2 rounded bg-white/5 p-2">
+                <span className="flex items-center gap-2 text-slate-400"><Database size={14} /> Intelligence</span>
+                <span className={`font-medium ${intelligenceStatus?.online_intelligence_enabled ? "text-sentinel-green" : "text-sentinel-amber"}`}>
+                  {intelligenceStatus?.online_intelligence_enabled ? "Enabled" : "Manual"}
+                </span>
               </div>
             </div>
           </section>

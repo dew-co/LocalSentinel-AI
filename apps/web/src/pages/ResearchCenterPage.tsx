@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '../components/layout/PageContainer';
 import { BookOpen, FileSearch, Loader2, Save, Sparkles } from 'lucide-react';
+import { api } from '../lib/api';
 
 export function ResearchCenterPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [cacheMessage, setCacheMessage] = useState('');
 
   useEffect(() => {
     fetchHistory();
@@ -32,6 +34,7 @@ export function ResearchCenterPage() {
       .then(data => {
         if (data.status === 'ok') {
           setResult(data.result);
+          setCacheMessage('');
         }
       })
       .finally(() => setLoading(false));
@@ -58,6 +61,29 @@ export function ResearchCenterPage() {
           setQuery('');
         }
       });
+  };
+
+  const handleSaveToCache = async () => {
+    if (!result) return;
+    const source = Array.isArray(result.sources) && result.sources.length > 0 ? String(result.sources[0]) : 'local://research-center';
+    try {
+      await api.saveIntelligenceItem({
+        title: result.topic,
+        summary: result.summary,
+        content: [result.summary, result.recommendation].filter(Boolean).join('\n\n'),
+        category: 'user_project_topics',
+        memory_domain: 'Research Brain',
+        source_type: 'manual_research',
+        source_url: source,
+        source_name: 'Research Center',
+        confidence_level: 'user_saved',
+        freshness_date: new Date().toISOString(),
+        tags: ['research-center', 'manual-save']
+      });
+      setCacheMessage('Saved to Local Intelligence Cache.');
+    } catch (error) {
+      setCacheMessage(error instanceof Error ? error.message : 'Failed to save intelligence item.');
+    }
   };
 
   return (
@@ -111,6 +137,12 @@ export function ResearchCenterPage() {
             >
               <Save size={16} /> Save to Knowledge Base
             </button>
+            <button 
+              onClick={handleSaveToCache} 
+              className="flex items-center gap-2 rounded border border-sentinel-green/30 bg-sentinel-green/10 px-4 py-2 text-sm font-medium text-sentinel-green transition-colors hover:bg-sentinel-green hover:text-sentinel-bg"
+            >
+              <Save size={16} /> Save to Local Intelligence Cache
+            </button>
           </div>
           
           <div className="space-y-4">
@@ -125,6 +157,11 @@ export function ResearchCenterPage() {
             {result.assumptions && (
               <div className="text-xs text-slate-500 italic">
                 Assumptions: {result.assumptions}
+              </div>
+            )}
+            {cacheMessage && (
+              <div className="rounded border border-cyan-500/30 bg-cyan-500/10 p-3 text-sm text-cyan-100">
+                {cacheMessage}
               </div>
             )}
           </div>

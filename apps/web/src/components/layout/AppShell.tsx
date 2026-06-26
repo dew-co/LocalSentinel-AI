@@ -1,4 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { api } from "../../lib/api";
+import { FirstTimeIntelligenceSetup } from "../intelligence/FirstTimeIntelligenceSetup";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
 
@@ -8,6 +11,7 @@ const mobileItems = [
   ["New Project", "/projects/new"],
   ["Chat", "/chat"],
   ["Agent", "/agent"],
+  ["Intel", "/intelligence-center"],
   ["Models", "/models"],
   ["RAG", "/rag-memory"],
   ["Sentiment", "/sentiment"],
@@ -15,6 +19,14 @@ const mobileItems = [
 ] as const;
 
 export default function AppShell() {
+  const [showIntelligenceSetup, setShowIntelligenceSetup] = useState(false);
+
+  useEffect(() => {
+    api.intelligenceOnboardingStatus()
+      .then((status) => setShowIntelligenceSetup(!status.first_run_completed))
+      .catch(() => undefined);
+  }, []);
+
   return (
     <div className="min-h-screen bg-sentinel-bg text-slate-100 lg:h-screen lg:overflow-hidden">
       <div className="flex min-h-screen lg:h-screen">
@@ -41,6 +53,7 @@ export default function AppShell() {
           </main>
         </div>
       </div>
+      <FirstTimeIntelligenceSetup open={showIntelligenceSetup} onClose={() => setShowIntelligenceSetup(false)} />
     </div>
   );
 }

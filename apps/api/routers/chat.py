@@ -6,6 +6,7 @@ from fastapi import APIRouter
 
 from schemas.chat_schema import ChatRequest
 from services.agent_planner import agent_planner
+from services.intelligence_engine_service import intelligence_engine_service
 from services.ollama_service import ollama_service
 from services.rag_service import rag_service
 from services.sentiment_service import sentiment_service
@@ -255,6 +256,25 @@ async def chat(payload: ChatRequest):
         severity="info"
     )
 
+    cached_answer = await intelligence_engine_service.answer_prompt_if_cached(payload.message, payload.projectId)
+    if cached_answer:
+        cached_items = cached_answer.get("items", [])
+        return {
+            "answer": cached_answer["answer"],
+            "model": selected_model,
+            "citations": [
+                {
+                    "filePath": item.get("source_url") or item.get("title", "cached intelligence"),
+                    "score": 1,
+                    "preview": (item.get("summary") or item.get("content") or "")[:700],
+                }
+                for item in cached_items
+            ],
+            "suggestedFiles": [],
+            "safeActions": ["Open Intelligence Center to inspect or delete cached knowledge."],
+            "memoryStored": False,
+        }
+
     quick_answer = fast_companion_answer(payload.message, payload)
     if quick_answer:
         return {
@@ -266,12 +286,16 @@ async def chat(payload: ChatRequest):
             "memoryStored": False,
         }
 
+    intelligence_context = intelligence_engine_service.get_offline_context_for_prompt(payload.message, payload.projectId, limit=4)
     if not selected_model or not await ollama_service.is_running():
         plan = agent_planner.plan(payload.message, payload.projectId)
+        cached_hint = ""
+        if intelligence_context.get("items"):
+            cached_hint = "\n\nCached local intelligence:\n" + intelligence_context["context"]
         answer = (
             "I cannot reach the selected local model right now. "
             "Start Ollama and select a model to enable full companion chat.\n\n"
-            f"Draft plan:\n- " + "\n- ".join(plan.steps)
+            f"Draft plan:\n- " + "\n- ".join(plan.steps) + cached_hint
         )
         return {
             "answer": answer,
@@ -284,8 +308,12 @@ async def chat(payload: ChatRequest):
 
     asks_for_change = bool(re.search(r"\b(add|change|edit|fix|create|remove|implement|refactor)\b", payload.message, re.I))
     system = (
-        "You are Sentinel Core, the voice-enabled companion layer inside LocalSentinel AI. "
-        "You help with software development, project planning, debugging, learning, task prioritization, and productivity. "
+        "You are SentinelCore, the companion intelligence interface of LocalSentinel AI. "
+        "You help the user think, research, code, understand their system, and manage development projects. "
+        "You use local Project Brain, System Brain, Research Brain, User Work Brain, and cached Intelligence Engine knowledge when available. "
+        "If online intelligence is disabled or the user is offline, clearly say you are using local cached knowledge. "
+        "Do not claim real-time knowledge unless online research was performed. "
+        "Always respect permissions and privacy settings. "
         "Be friendly, practical, developer-focused, clear, and step-by-step. "
         "Use empathy-style language when useful, but never claim to be conscious, emotional, human, or able to feel. "
         "Never overstate certainty. State assumptions and ask for missing details when needed. "
@@ -304,6 +332,8 @@ async def chat(payload: ChatRequest):
         f"Project summary: {project_summary}\n\n"
         f"Recent conversation:\n{recent_conversation or 'No previous conversation.'}\n\n"
         f"Relevant context:\n{context_block or 'No RAG context available.'}\n\n"
+        f"Cached Intelligence Engine context:\n{intelligence_context['context'] or 'No cached intelligence context available.'}\n"
+        f"Cached intelligence last refresh: {intelligence_context['last_updated'] or 'never'}\n\n"
         f"{sentiment_context}\n\n"
         f"Input mode: {'voice' if payload.isVoice else 'text'}\n\n"
         f"User message: {payload.message}"

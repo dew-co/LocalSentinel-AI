@@ -1,4 +1,17 @@
-import type { AgentPlan, ChatRequestPayload, ChatResponse, ModelInfo, ModelStatus, ProjectRecord, ProjectScan, SentimentResult } from "../types/api";
+import type {
+  AdaptivePreference,
+  AgentPlan,
+  ChatRequestPayload,
+  ChatResponse,
+  IntelligenceItem,
+  IntelligencePermissions,
+  IntelligenceStatus,
+  ModelInfo,
+  ModelStatus,
+  ProjectRecord,
+  ProjectScan,
+  SentimentResult
+} from "../types/api";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
@@ -41,7 +54,35 @@ export const api = {
   preview: (payload: unknown) => request<{ requiresApproval: boolean; warnings: string[]; commands: unknown[]; fileOperations: unknown[] }>("/agent/preview", { method: "POST", body: JSON.stringify(payload) }),
   execute: (payload: unknown) => request("/agent/execute", { method: "POST", body: JSON.stringify(payload) }),
   sentiment: (text: string) => request<SentimentResult>("/sentiment/analyze", { method: "POST", body: JSON.stringify({ text }) }),
-  voiceStatus: () => request<{ browserSpeechRecognition: boolean; message: string }>("/voice/status")
+  voiceStatus: () => request<{ browserSpeechRecognition: boolean; message: string }>("/voice/status"),
+  intelligenceStatus: () => request<IntelligenceStatus>("/api/intelligence/status"),
+  intelligenceOnlineStatus: () => request<{ online: boolean; checked_at: string; message: string }>("/api/intelligence/online-status"),
+  intelligenceOnboardingStatus: () => request<{ first_run_completed: boolean; permissions: IntelligencePermissions }>("/api/intelligence/onboarding/status"),
+  completeIntelligenceOnboarding: (permissions: Partial<IntelligencePermissions>) =>
+    request("/api/intelligence/onboarding/complete", { method: "POST", body: JSON.stringify({ permissions }) }),
+  skipIntelligenceOnboarding: () => request("/api/intelligence/onboarding/skip", { method: "POST" }),
+  intelligencePermissions: () => request<{ permissions: IntelligencePermissions; source_categories: string[]; memory_domains: string[] }>("/api/intelligence/permissions"),
+  updateIntelligencePermissions: (payload: Partial<IntelligencePermissions>) =>
+    request<{ permissions: IntelligencePermissions }>("/api/intelligence/permissions", { method: "PATCH", body: JSON.stringify(payload) }),
+  intelligenceSources: () => request<{ sources: unknown[]; categories: string[] }>("/api/intelligence/sources"),
+  refreshIntelligence: (projectId?: string) =>
+    request("/api/intelligence/refresh", { method: "POST", body: JSON.stringify({ project_id: projectId, triggered_by: "user" }) }),
+  intelligenceRefreshHistory: () => request<{ history: unknown[] }>("/api/intelligence/refresh/history"),
+  intelligenceItems: (params: Record<string, string | number | undefined> = {}) => {
+    const search = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== "") search.set(key, String(value));
+    });
+    return request<{ items: IntelligenceItem[]; stats: unknown }>(`/api/intelligence/items${search.toString() ? `?${search}` : ""}`);
+  },
+  saveIntelligenceItem: (payload: Partial<IntelligenceItem> & { title: string }) =>
+    request<{ item: IntelligenceItem }>("/api/intelligence/items", { method: "POST", body: JSON.stringify(payload) }),
+  searchIntelligence: (query: string) => request<{ items: IntelligenceItem[] }>(`/api/intelligence/search?query=${encodeURIComponent(query)}`),
+  deleteIntelligenceItem: (id: string) => request(`/api/intelligence/items/${id}`, { method: "DELETE" }),
+  clearIntelligenceCache: () => request<{ status: string; removed: number }>("/api/intelligence/cache/clear", { method: "DELETE" }),
+  adaptivePreferences: () => request<{ preferences: AdaptivePreference[]; enabled: boolean }>("/api/intelligence/adaptive/preferences"),
+  adaptiveSignal: (payload: unknown) => request("/api/intelligence/adaptive/signal", { method: "POST", body: JSON.stringify(payload) }),
+  deleteAdaptivePreference: (id: string) => request(`/api/intelligence/adaptive/preferences/${id}`, { method: "DELETE" })
 };
 
 export { API_URL };

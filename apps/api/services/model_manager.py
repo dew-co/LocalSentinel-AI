@@ -48,6 +48,12 @@ class ModelManager:
 
     async def select(self, model: str) -> dict[str, Any]:
         db.set_setting("active_model", model)
+        try:
+            from services.adaptive_memory_service import adaptive_memory_service
+
+            adaptive_memory_service.record_signal(None, "selected_models", "selected_models", model, weight=1)
+        except Exception:
+            pass
         return {"activeModel": model, "message": f"Active model set to {model}"}
 
     async def pull(self, model: str, approved: bool) -> dict[str, Any]:

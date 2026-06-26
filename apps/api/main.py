@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import ensure_data_dirs, settings
-from routers import agent, chat, models, projects, rag, sentiment, voice, memory, system, research, activity, agents, tasks
+from routers import activity, agent, agents, chat, intelligence, memory, models, projects, rag, research, sentiment, system, tasks, voice
 
 ensure_data_dirs()
 
@@ -35,6 +35,7 @@ app.include_router(research.router)
 app.include_router(activity.router)
 app.include_router(agents.router)
 app.include_router(tasks.router)
+app.include_router(intelligence.router)
 
 
 @app.get("/health")
@@ -45,4 +46,3 @@ def health():
         "safeMode": settings.safe_mode,
         "ragEnabled": settings.rag_enabled,
     }
-

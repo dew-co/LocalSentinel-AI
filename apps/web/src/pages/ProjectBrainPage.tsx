@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react';
 import { PageContainer } from '../components/layout/PageContainer';
-import { Database, Filter, Search, Tag } from 'lucide-react';
+import { BrainCircuit, Database, Filter, Search, Tag } from 'lucide-react';
+import { api } from '../lib/api';
+import type { IntelligenceItem } from '../types/api';
 
 export function ProjectBrainPage() {
   const [memory, setMemory] = useState<any[]>([]);
+  const [intelligence, setIntelligence] = useState<IntelligenceItem[]>([]);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     fetch('http://localhost:8000/api/memory/search?query=')
@@ -13,7 +17,15 @@ export function ProjectBrainPage() {
           setMemory(data.results || []);
         }
       }).catch(() => undefined);
+    api.intelligenceItems({ limit: 24 })
+      .then(data => setIntelligence(data.items.filter(item => ['Project Brain', 'Framework Brain', 'Package Brain', 'Error Solution Brain'].includes(item.memory_domain))))
+      .catch(() => undefined);
   }, []);
+
+  const filteredIntelligence = intelligence.filter(item => {
+    const text = `${item.title} ${item.summary} ${item.memory_domain} ${item.category}`.toLowerCase();
+    return !query || text.includes(query.toLowerCase());
+  });
 
   return (
     <PageContainer>
@@ -30,6 +42,8 @@ export function ProjectBrainPage() {
           <div className="relative">
             <input 
               type="text" 
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
               placeholder="Search memory..." 
               className="w-full rounded border border-sentinel-border bg-black/40 py-2 pl-9 pr-4 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50"
             />
@@ -40,6 +54,37 @@ export function ProjectBrainPage() {
           </button>
         </div>
       </div>
+
+      <section className="mb-8">
+        <div className="mb-4 flex items-center gap-2">
+          <BrainCircuit size={18} className="text-cyan-400" />
+          <h2 className="text-lg font-semibold text-white">Project Intelligence Cache</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {filteredIntelligence.map((item) => (
+            <article key={item.id} className="panel rounded-xl border border-sentinel-border/50 bg-white/5 p-4">
+              <div className="mb-3 flex flex-wrap gap-2">
+                <span className="rounded border border-cyan-500/20 bg-cyan-950/40 px-2 py-0.5 text-[10px] uppercase tracking-wider text-cyan-300">
+                  {item.memory_domain}
+                </span>
+                <span className="rounded border border-sentinel-border bg-black/30 px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-400">
+                  {item.category}
+                </span>
+              </div>
+              <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+              <p className="mt-2 line-clamp-4 text-sm leading-6 text-slate-400">{item.summary}</p>
+              <div className="mt-3 border-t border-sentinel-border/40 pt-3 text-[10px] uppercase tracking-wider text-slate-500">
+                {item.source_name || 'Local cache'} · {item.freshness_date ? new Date(item.freshness_date).toLocaleDateString() : 'No date'}
+              </div>
+            </article>
+          ))}
+          {filteredIntelligence.length === 0 && (
+            <div className="rounded-xl border border-dashed border-sentinel-border p-8 text-center text-sm text-slate-500 md:col-span-2 xl:col-span-4">
+              No project, framework, package, or error-solution intelligence is cached yet.
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {memory.map((item, idx) => (

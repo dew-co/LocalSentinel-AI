@@ -24,6 +24,8 @@ class IntentRouterService:
             return "system_scan"
         if re.search(r'\b(research|find out|compare)\b', text_lower):
             return "research_request"
+        if re.search(r'\b(intelligence|knowledge cache|offline cache|cached knowledge|refresh intelligence)\b', text_lower):
+            return "intelligence_query"
         if re.search(r'\b(memory|remember|what do you know)\b', text_lower):
             return "memory_query"
         if re.search(r'\b(agent|map|structure)\b', text_lower):

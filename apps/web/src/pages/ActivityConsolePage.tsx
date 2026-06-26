@@ -76,6 +76,10 @@ export function ActivityConsolePage() {
               <option value="memory">Memory</option>
               <option value="agent">Agent</option>
               <option value="user">User</option>
+              <option value="intelligence_refresh_started">Intelligence Refresh</option>
+              <option value="intelligence_item_saved">Intelligence Items</option>
+              <option value="intelligence_cache_cleared">Cache Clearing</option>
+              <option value="adaptive_preference_learned">Adaptive Memory</option>
             </select>
             <Filter size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" />
           </div>

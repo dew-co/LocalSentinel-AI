@@ -1,6 +1,7 @@
-import { Activity, AlertTriangle, Box, Check, CheckCircle2, Cpu, FileWarning, RefreshCw, ShieldAlert, ShieldCheck, Terminal, X, XCircle } from 'lucide-react';
+import { Activity, AlertTriangle, Box, BrainCircuit, Check, CheckCircle2, Cpu, FileWarning, RefreshCw, ShieldAlert, ShieldCheck, Terminal, X, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PageContainer } from '../components/layout/PageContainer';
+import { api } from '../lib/api';
 
 // Import icons correctly from lucide-react instead
 import { Check as IconCheck, AlertTriangle as IconAlert, X as IconX, RefreshCw as IconRefresh, ShieldCheck as IconShield, Cpu as IconCpu, Box as IconBox, Terminal as IconTerminal } from 'lucide-react';
@@ -10,6 +11,8 @@ export function SystemIntelligencePage() {
   const [readiness, setReadiness] = useState<any>(null);
   const [scanning, setScanning] = useState(false);
   const [models, setModels] = useState<any>(null);
+  const [systemKnowledge, setSystemKnowledge] = useState<any[]>([]);
+  const [permissions, setPermissions] = useState<any>(null);
 
   const fetchStatus = () => {
     fetch('http://localhost:8000/api/system/status')
@@ -29,6 +32,14 @@ export function SystemIntelligencePage() {
       .then(data => {
         setModels(data);
       }).catch(() => undefined);
+
+    api.intelligenceItems({ memory_domain: 'System Brain', limit: 5 })
+      .then(data => setSystemKnowledge(data.items))
+      .catch(() => undefined);
+
+    api.intelligencePermissions()
+      .then(data => setPermissions(data.permissions))
+      .catch(() => undefined);
   };
 
   useEffect(() => {
@@ -36,16 +47,26 @@ export function SystemIntelligencePage() {
   }, []);
 
   const handleScan = () => {
-    setScanning(true);
-    fetch('http://localhost:8000/api/system/scan', { method: 'POST' })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'ok') {
-          setTools(data.tools);
-          fetchStatus();
+    const run = async () => {
+      if (!permissions?.system_scan_allowed) {
+        const allowed = confirm('Allow LocalSentinel to run a read-only developer tool scan and save the summary into the local System Brain cache?');
+        if (!allowed) return;
+        if (allowed) {
+          await api.updateIntelligencePermissions({ system_scan_allowed: true });
         }
-      })
-      .finally(() => setScanning(false));
+      }
+      setScanning(true);
+      fetch('http://localhost:8000/api/system/scan', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'ok') {
+            setTools(data.tools);
+            fetchStatus();
+          }
+        })
+        .finally(() => setScanning(false));
+    };
+    run().catch(() => setScanning(false));
   };
 
   const installedTools = tools.filter(t => t.detected);
@@ -185,6 +206,56 @@ export function SystemIntelligencePage() {
                   {models?.recommendedModel || "llama3"}
                 </span>
               </div>
+            </div>
+          </section>
+
+          {/* CACHED SYSTEM KNOWLEDGE */}
+          <section className="panel rounded-xl p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan-200/50">
+              <BrainCircuit size={14} /> Cached System Knowledge
+            </h3>
+            <div className="space-y-3">
+              {systemKnowledge.map((item) => (
+                <div key={item.id} className="rounded border border-sentinel-border bg-white/5 p-3">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="truncate text-sm font-semibold text-slate-200">{item.title}</span>
+                    <span className="shrink-0 text-[10px] uppercase text-cyan-300">{item.confidence_level}</span>
+                  </div>
+                  <p className="line-clamp-3 text-xs leading-5 text-slate-400">{item.summary}</p>
+                  <p className="mt-2 text-[10px] uppercase tracking-wider text-slate-500">
+                    Updated {item.freshness_date ? new Date(item.freshness_date).toLocaleString() : 'unknown'}
+                  </p>
+                </div>
+              ))}
+              {systemKnowledge.length === 0 && (
+                <div className="rounded border border-dashed border-sentinel-border p-4 text-center text-sm text-slate-500">
+                  No cached System Brain knowledge yet. Allow system scan caching and run a scan.
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* SETUP RECOMMENDATIONS */}
+          <section className="panel rounded-xl p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-cyan-200/50">
+              <ShieldCheck size={14} /> Setup Recommendations
+            </h3>
+            <div className="space-y-2 text-sm text-slate-300">
+              {missingTools.slice(0, 5).map((tool) => (
+                <div key={tool.tool_name} className="rounded border border-sentinel-amber/30 bg-sentinel-amber/10 p-3 text-sentinel-amber">
+                  Install {tool.tool_name} if it is required for your local workflow.
+                </div>
+              ))}
+              {models?.recommendedModel && (
+                <div className="rounded border border-cyan-500/30 bg-cyan-500/10 p-3 text-cyan-100">
+                  Recommended local model: {models.recommendedModel}
+                </div>
+              )}
+              {missingTools.length === 0 && (
+                <div className="rounded border border-sentinel-green/30 bg-sentinel-green/10 p-3 text-sentinel-green">
+                  No missing developer tools recorded from the latest scan.
+                </div>
+              )}
             </div>
           </section>
           

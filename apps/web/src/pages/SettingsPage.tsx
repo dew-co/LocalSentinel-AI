@@ -1,20 +1,31 @@
 import { useEffect, useState } from "react";
 import { defaultSettings, saveSettings, SETTINGS_KEY, type LocalSentinelSettings } from "../lib/settings";
 import { PageContainer } from "../components/layout/PageContainer";
-import { Settings2, Cpu, Mic, Zap, Shield } from "lucide-react";
+import { Settings2, Cpu, Mic, Zap, Shield, BrainCircuit } from "lucide-react";
+import { api } from "../lib/api";
+import type { IntelligencePermissions } from "../types/api";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(defaultSettings);
+  const [intelligence, setIntelligence] = useState<IntelligencePermissions | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem(SETTINGS_KEY);
     if (saved) setSettings({ ...defaultSettings, ...JSON.parse(saved) });
+    api.intelligencePermissions()
+      .then((data) => setIntelligence(data.permissions))
+      .catch(() => undefined);
   }, []);
 
   const update = (key: keyof LocalSentinelSettings, value: string | boolean) => {
     const next = { ...settings, [key]: value };
     setSettings(next);
     saveSettings(next);
+  };
+
+  const updateIntelligence = async (patch: Partial<IntelligencePermissions>) => {
+    const result = await api.updateIntelligencePermissions(patch);
+    setIntelligence(result.permissions);
   };
 
   return (
@@ -84,6 +95,37 @@ export default function SettingsPage() {
               When Safe Mode is disabled, LocalSentinel may execute terminal commands, modify files, and access external services without explicit user approval. Proceed with caution.
             </p>
           </div>
+        </section>
+
+        {/* Intelligence Engine */}
+        <section className="panel rounded-xl border border-sentinel-border/50 bg-gradient-to-br from-cyan-950/10 to-transparent p-6 shadow-xl md:col-span-2">
+          <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-slate-300 border-b border-sentinel-border/30 pb-2">
+            <BrainCircuit size={16} className="text-cyan-400" /> Intelligence Engine Permissions
+          </h3>
+          {intelligence ? (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <Toggle label="online_intelligence_enabled" checked={intelligence.online_intelligence_enabled} onChange={(value) => updateIntelligence({ online_intelligence_enabled: value })} />
+              <Toggle label="system_scan_allowed" checked={intelligence.system_scan_allowed} onChange={(value) => updateIntelligence({ system_scan_allowed: value })} />
+              <Toggle label="project_scan_allowed" checked={intelligence.project_scan_allowed} onChange={(value) => updateIntelligence({ project_scan_allowed: value })} />
+              <Toggle label="adaptive_memory_enabled" checked={intelligence.adaptive_memory_enabled} onChange={(value) => updateIntelligence({ adaptive_memory_enabled: value })} />
+              <Toggle label="offline_cache_enabled" checked={intelligence.offline_cache_enabled} onChange={(value) => updateIntelligence({ offline_cache_enabled: value })} />
+              <label className="block rounded border border-sentinel-border/50 bg-black/20 px-4 py-3 text-sm">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-400">refresh_frequency</span>
+                <select
+                  className="w-full rounded border border-sentinel-border bg-black/40 px-3 py-2 text-white focus:border-cyan-500/50 focus:outline-none"
+                  value={intelligence.refresh_frequency}
+                  onChange={(event) => updateIntelligence({ refresh_frequency: event.target.value as IntelligencePermissions["refresh_frequency"], scheduled_refresh_enabled: event.target.value !== "manual" })}
+                >
+                  <option value="manual">manual</option>
+                  <option value="daily">daily</option>
+                  <option value="weekly">weekly</option>
+                  <option value="monthly">monthly</option>
+                </select>
+              </label>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-500">Loading intelligence permissions...</p>
+          )}
         </section>
       </div>
     </PageContainer>

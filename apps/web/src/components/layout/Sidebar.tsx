@@ -21,6 +21,7 @@ const menuGroups = [
   {
     title: "Operations",
     items: [
+      { label: "Intelligence Center", to: "/intelligence-center", icon: BrainCircuit },
       { label: "System Intelligence", to: "/system-intelligence", icon: Cpu },
       { label: "Research Center", to: "/research-center", icon: Search },
       { label: "Activity Console", to: "/activity-console", icon: Activity },

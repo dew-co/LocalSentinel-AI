@@ -81,3 +81,60 @@ export type ChatRequestPayload = {
   rememberVoice?: boolean;
   conversationHistory?: { role: "user" | "assistant"; content: string }[];
 };
+
+export type IntelligencePermissions = {
+  online_intelligence_enabled: boolean;
+  first_run_completed: boolean;
+  system_scan_allowed: boolean;
+  project_scan_allowed: boolean;
+  adaptive_memory_enabled: boolean;
+  scheduled_refresh_enabled: boolean;
+  refresh_frequency: "manual" | "daily" | "weekly" | "monthly";
+  allowed_sources: string[];
+  offline_cache_enabled: boolean;
+};
+
+export type IntelligenceItem = {
+  id: string;
+  title: string;
+  summary: string;
+  content: string;
+  category: string;
+  memory_domain: string;
+  source_type: string;
+  source_url: string;
+  source_name: string;
+  confidence_level: string;
+  freshness_date: string;
+  expires_at?: string | null;
+  tags_json?: string;
+  tags?: string[];
+  related_project_id?: string | null;
+  created_at: string;
+  updated_at: string;
+  last_used_at?: string | null;
+  use_count: number;
+};
+
+export type IntelligenceStatus = {
+  online: boolean | null;
+  online_intelligence_enabled: boolean;
+  offline_cache_ready: boolean;
+  last_refresh?: string | null;
+  cached_items: number;
+  stale_items: number;
+  memory_domains: Record<string, number>;
+  source_categories: Record<string, number>;
+  permissions: IntelligencePermissions;
+};
+
+export type AdaptivePreference = {
+  id: string;
+  preference_key: string;
+  preference_value: string;
+  confidence: number;
+  source: string;
+  created_at: string;
+  updated_at: string;
+  user_editable: boolean;
+};

@@ -150,6 +150,99 @@ class Database:
                 )
                 """
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS intelligence_items (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    summary TEXT,
+                    content TEXT,
+                    category TEXT,
+                    memory_domain TEXT,
+                    source_type TEXT,
+                    source_url TEXT,
+                    source_name TEXT,
+                    confidence_level TEXT,
+                    freshness_date TEXT,
+                    expires_at TEXT,
+                    tags_json TEXT DEFAULT '[]',
+                    related_project_id TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    last_used_at TEXT,
+                    use_count INTEGER DEFAULT 0
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS intelligence_sources (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    source_type TEXT,
+                    base_url TEXT,
+                    category TEXT,
+                    allowed BOOLEAN DEFAULT 0,
+                    trust_level TEXT,
+                    last_checked_at TEXT,
+                    notes TEXT
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS intelligence_refresh_runs (
+                    id TEXT PRIMARY KEY,
+                    run_type TEXT,
+                    status TEXT,
+                    started_at TEXT NOT NULL,
+                    completed_at TEXT,
+                    items_found INTEGER DEFAULT 0,
+                    items_saved INTEGER DEFAULT 0,
+                    items_updated INTEGER DEFAULT 0,
+                    errors_json TEXT DEFAULT '[]',
+                    triggered_by TEXT
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS user_activity_signals (
+                    id TEXT PRIMARY KEY,
+                    project_id TEXT,
+                    activity_type TEXT,
+                    signal_key TEXT,
+                    signal_value TEXT,
+                    weight REAL DEFAULT 1,
+                    created_at TEXT NOT NULL,
+                    metadata_json TEXT DEFAULT '{}'
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS adaptive_preferences (
+                    id TEXT PRIMARY KEY,
+                    preference_key TEXT,
+                    preference_value TEXT,
+                    confidence REAL DEFAULT 0,
+                    source TEXT,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    user_editable BOOLEAN DEFAULT 1
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS consent_settings (
+                    id TEXT PRIMARY KEY,
+                    setting_key TEXT NOT NULL UNIQUE,
+                    setting_value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+                """
+            )
 
     def upsert_project(
         self,
@@ -337,7 +430,15 @@ class Database:
         params.append(limit)
         with self.connect() as conn:
             rows = conn.execute(query, tuple(params)).fetchall()
-        return [dict(row) for row in rows]
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            try:
+                item["metadata"] = json.loads(item.get("metadata_json") or "{}")
+            except json.JSONDecodeError:
+                item["metadata"] = {}
+            result.append(item)
+        return result
 
     def clear_activity_logs(self) -> None:
         with self.connect() as conn:
@@ -465,5 +566,375 @@ class Database:
     def delete_task(self, task_id: str) -> None:
         with self.connect() as conn:
             conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+
+    def get_consent_settings(self, defaults: dict[str, Any] | None = None) -> dict[str, Any]:
+        settings = dict(defaults or {})
+        with self.connect() as conn:
+            rows = conn.execute("SELECT setting_key, setting_value FROM consent_settings").fetchall()
+        for row in rows:
+            try:
+                settings[row["setting_key"]] = json.loads(row["setting_value"])
+            except json.JSONDecodeError:
+                settings[row["setting_key"]] = row["setting_value"]
+        return settings
+
+    def set_consent_setting(self, key: str, value: Any) -> None:
+        now = utc_now()
+        with self.connect() as conn:
+            existing = conn.execute("SELECT id FROM consent_settings WHERE setting_key = ?", (key,)).fetchone()
+            setting_id = existing["id"] if existing else str(uuid.uuid4())
+            conn.execute(
+                """
+                INSERT INTO consent_settings (id, setting_key, setting_value, updated_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(setting_key) DO UPDATE SET
+                  setting_value = excluded.setting_value,
+                  updated_at = excluded.updated_at
+                """,
+                (setting_id, key, json.dumps(value), now),
+            )
+
+    def patch_consent_settings(self, values: dict[str, Any]) -> dict[str, Any]:
+        for key, value in values.items():
+            self.set_consent_setting(key, value)
+        return self.get_consent_settings()
+
+    def upsert_intelligence_source(
+        self,
+        name: str,
+        source_type: str,
+        base_url: str,
+        category: str,
+        allowed: bool,
+        trust_level: str,
+        notes: str = "",
+        last_checked_at: str | None = None,
+    ) -> dict[str, Any]:
+        now = last_checked_at or utc_now()
+        with self.connect() as conn:
+            existing = conn.execute("SELECT id FROM intelligence_sources WHERE name = ? AND base_url = ?", (name, base_url)).fetchone()
+            source_id = existing["id"] if existing else str(uuid.uuid4())
+            conn.execute(
+                """
+                INSERT INTO intelligence_sources (id, name, source_type, base_url, category, allowed, trust_level, last_checked_at, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                  name = excluded.name,
+                  source_type = excluded.source_type,
+                  base_url = excluded.base_url,
+                  category = excluded.category,
+                  allowed = excluded.allowed,
+                  trust_level = excluded.trust_level,
+                  last_checked_at = excluded.last_checked_at,
+                  notes = excluded.notes
+                """,
+                (source_id, name, source_type, base_url, category, allowed, trust_level, now, notes),
+            )
+        return self.get_intelligence_source(source_id) or {}
+
+    def get_intelligence_source(self, source_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM intelligence_sources WHERE id = ?", (source_id,)).fetchone()
+        return dict(row) if row else None
+
+    def list_intelligence_sources(self, allowed_only: bool = False) -> list[dict[str, Any]]:
+        query = "SELECT * FROM intelligence_sources"
+        params: tuple[Any, ...] = ()
+        if allowed_only:
+            query += " WHERE allowed = 1"
+        query += " ORDER BY category, name"
+        with self.connect() as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [dict(row) for row in rows]
+
+    def upsert_intelligence_item(
+        self,
+        title: str,
+        summary: str,
+        content: str,
+        category: str,
+        memory_domain: str,
+        source_type: str,
+        source_url: str,
+        source_name: str,
+        confidence_level: str,
+        freshness_date: str,
+        expires_at: str | None = None,
+        tags: list[str] | None = None,
+        related_project_id: str | None = None,
+    ) -> tuple[dict[str, Any], bool]:
+        now = utc_now()
+        tags_json = json.dumps(tags or [])
+        with self.connect() as conn:
+            existing = conn.execute(
+                """
+                SELECT id, created_at FROM intelligence_items
+                WHERE title = ? AND source_url = ? AND COALESCE(related_project_id, '') = COALESCE(?, '')
+                """,
+                (title, source_url, related_project_id),
+            ).fetchone()
+            item_id = existing["id"] if existing else str(uuid.uuid4())
+            created_at = existing["created_at"] if existing else now
+            conn.execute(
+                """
+                INSERT INTO intelligence_items (
+                    id, title, summary, content, category, memory_domain, source_type,
+                    source_url, source_name, confidence_level, freshness_date, expires_at,
+                    tags_json, related_project_id, created_at, updated_at, last_used_at, use_count
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 0)
+                ON CONFLICT(id) DO UPDATE SET
+                  title = excluded.title,
+                  summary = excluded.summary,
+                  content = excluded.content,
+                  category = excluded.category,
+                  memory_domain = excluded.memory_domain,
+                  source_type = excluded.source_type,
+                  source_url = excluded.source_url,
+                  source_name = excluded.source_name,
+                  confidence_level = excluded.confidence_level,
+                  freshness_date = excluded.freshness_date,
+                  expires_at = excluded.expires_at,
+                  tags_json = excluded.tags_json,
+                  related_project_id = excluded.related_project_id,
+                  updated_at = excluded.updated_at
+                """,
+                (
+                    item_id,
+                    title,
+                    summary,
+                    content,
+                    category,
+                    memory_domain,
+                    source_type,
+                    source_url,
+                    source_name,
+                    confidence_level,
+                    freshness_date,
+                    expires_at,
+                    tags_json,
+                    related_project_id,
+                    created_at,
+                    now,
+                ),
+            )
+        item = self.get_intelligence_item(item_id) or {}
+        return item, existing is not None
+
+    def get_intelligence_item(self, item_id: str, mark_used: bool = False) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            if mark_used:
+                conn.execute(
+                    "UPDATE intelligence_items SET use_count = COALESCE(use_count, 0) + 1, last_used_at = ? WHERE id = ?",
+                    (utc_now(), item_id),
+                )
+            row = conn.execute("SELECT * FROM intelligence_items WHERE id = ?", (item_id,)).fetchone()
+        return self._intelligence_item_row(row) if row else None
+
+    def list_intelligence_items(
+        self,
+        query: str | None = None,
+        category: str | None = None,
+        source_type: str | None = None,
+        memory_domain: str | None = None,
+        project_id: str | None = None,
+        freshness: str | None = None,
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        sql = "SELECT * FROM intelligence_items WHERE 1=1"
+        params: list[Any] = []
+        if query:
+            like = f"%{query.lower()}%"
+            sql += " AND (LOWER(title) LIKE ? OR LOWER(summary) LIKE ? OR LOWER(content) LIKE ? OR LOWER(tags_json) LIKE ?)"
+            params.extend([like, like, like, like])
+        if category:
+            sql += " AND category = ?"
+            params.append(category)
+        if source_type:
+            sql += " AND source_type = ?"
+            params.append(source_type)
+        if memory_domain:
+            sql += " AND memory_domain = ?"
+            params.append(memory_domain)
+        if project_id:
+            sql += " AND (related_project_id = ? OR related_project_id IS NULL)"
+            params.append(project_id)
+        if freshness == "stale":
+            sql += " AND expires_at IS NOT NULL AND expires_at < ?"
+            params.append(utc_now())
+        elif freshness == "fresh":
+            sql += " AND (expires_at IS NULL OR expires_at >= ?)"
+            params.append(utc_now())
+        sql += " ORDER BY updated_at DESC LIMIT ?"
+        params.append(max(1, min(limit, 250)))
+        with self.connect() as conn:
+            rows = conn.execute(sql, tuple(params)).fetchall()
+        return [self._intelligence_item_row(row) for row in rows]
+
+    def count_intelligence_items(self) -> int:
+        with self.connect() as conn:
+            row = conn.execute("SELECT COUNT(*) AS count FROM intelligence_items").fetchone()
+        return int(row["count"] if row else 0)
+
+    def delete_intelligence_item(self, item_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM intelligence_items WHERE id = ?", (item_id,))
+
+    def clear_intelligence_cache(self) -> int:
+        with self.connect() as conn:
+            row = conn.execute("SELECT COUNT(*) AS count FROM intelligence_items").fetchone()
+            count = int(row["count"] if row else 0)
+            conn.execute("DELETE FROM intelligence_items")
+        return count
+
+    def create_intelligence_refresh_run(self, run_type: str, status: str, triggered_by: str) -> dict[str, Any]:
+        run_id = str(uuid.uuid4())
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO intelligence_refresh_runs (id, run_type, status, started_at, triggered_by)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (run_id, run_type, status, now, triggered_by),
+            )
+        return self.get_intelligence_refresh_run(run_id) or {}
+
+    def complete_intelligence_refresh_run(
+        self,
+        run_id: str,
+        status: str,
+        items_found: int,
+        items_saved: int,
+        items_updated: int,
+        errors: list[str] | None = None,
+    ) -> dict[str, Any]:
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE intelligence_refresh_runs
+                SET status = ?, completed_at = ?, items_found = ?, items_saved = ?, items_updated = ?, errors_json = ?
+                WHERE id = ?
+                """,
+                (status, utc_now(), items_found, items_saved, items_updated, json.dumps(errors or []), run_id),
+            )
+        return self.get_intelligence_refresh_run(run_id) or {}
+
+    def get_intelligence_refresh_run(self, run_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM intelligence_refresh_runs WHERE id = ?", (run_id,)).fetchone()
+        return self._refresh_run_row(row) if row else None
+
+    def list_intelligence_refresh_runs(self, limit: int = 50) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute("SELECT * FROM intelligence_refresh_runs ORDER BY started_at DESC LIMIT ?", (max(1, min(limit, 100)),)).fetchall()
+        return [self._refresh_run_row(row) for row in rows]
+
+    def last_successful_intelligence_refresh(self) -> str | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                """
+                SELECT completed_at FROM intelligence_refresh_runs
+                WHERE status = 'completed'
+                ORDER BY completed_at DESC LIMIT 1
+                """
+            ).fetchone()
+        return row["completed_at"] if row else None
+
+    def add_user_activity_signal(
+        self,
+        project_id: str | None,
+        activity_type: str,
+        signal_key: str,
+        signal_value: str,
+        weight: float = 1,
+        metadata: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        signal_id = str(uuid.uuid4())
+        now = utc_now()
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO user_activity_signals (id, project_id, activity_type, signal_key, signal_value, weight, created_at, metadata_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (signal_id, project_id, activity_type, signal_key, signal_value, weight, now, json.dumps(metadata or {})),
+            )
+        return {
+            "id": signal_id,
+            "project_id": project_id,
+            "activity_type": activity_type,
+            "signal_key": signal_key,
+            "signal_value": signal_value,
+            "weight": weight,
+            "created_at": now,
+            "metadata": metadata or {},
+        }
+
+    def upsert_adaptive_preference(
+        self,
+        preference_key: str,
+        preference_value: str,
+        confidence_delta: float,
+        source: str,
+        user_editable: bool = True,
+    ) -> dict[str, Any]:
+        now = utc_now()
+        with self.connect() as conn:
+            existing = conn.execute(
+                "SELECT * FROM adaptive_preferences WHERE preference_key = ? AND preference_value = ?",
+                (preference_key, preference_value),
+            ).fetchone()
+            if existing:
+                confidence = min(1.0, max(0.0, float(existing["confidence"] or 0) + confidence_delta))
+                conn.execute(
+                    "UPDATE adaptive_preferences SET confidence = ?, source = ?, updated_at = ?, user_editable = ? WHERE id = ?",
+                    (confidence, source, now, user_editable, existing["id"]),
+                )
+                pref_id = existing["id"]
+            else:
+                pref_id = str(uuid.uuid4())
+                confidence = min(1.0, max(0.0, confidence_delta))
+                conn.execute(
+                    """
+                    INSERT INTO adaptive_preferences (id, preference_key, preference_value, confidence, source, created_at, updated_at, user_editable)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (pref_id, preference_key, preference_value, confidence, source, now, now, user_editable),
+                )
+        return self.get_adaptive_preference(pref_id) or {}
+
+    def get_adaptive_preference(self, preference_id: str) -> dict[str, Any] | None:
+        with self.connect() as conn:
+            row = conn.execute("SELECT * FROM adaptive_preferences WHERE id = ?", (preference_id,)).fetchone()
+        return dict(row) if row else None
+
+    def list_adaptive_preferences(self, limit: int = 100) -> list[dict[str, Any]]:
+        with self.connect() as conn:
+            rows = conn.execute(
+                "SELECT * FROM adaptive_preferences ORDER BY confidence DESC, updated_at DESC LIMIT ?",
+                (max(1, min(limit, 250)),),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def delete_adaptive_preference(self, preference_id: str) -> None:
+        with self.connect() as conn:
+            conn.execute("DELETE FROM adaptive_preferences WHERE id = ?", (preference_id,))
+
+    def _intelligence_item_row(self, row: sqlite3.Row) -> dict[str, Any]:
+        item = dict(row)
+        try:
+            item["tags"] = json.loads(item.get("tags_json") or "[]")
+        except json.JSONDecodeError:
+            item["tags"] = []
+        return item
+
+    def _refresh_run_row(self, row: sqlite3.Row) -> dict[str, Any]:
+        item = dict(row)
+        try:
+            item["errors"] = json.loads(item.get("errors_json") or "[]")
+        except json.JSONDecodeError:
+            item["errors"] = []
+        return item
 
 db = Database()
