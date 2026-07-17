@@ -93,3 +93,55 @@ Example:
 - `GET /voice/settings/defaults`
 
 The MVP uses browser speech recognition and speech synthesis.
+
+## Intelligence Engine
+
+All Intelligence Engine data is stored locally. Online intelligence is disabled by default and refresh is manual in the current MVP.
+
+### Status and onboarding
+
+- `GET /api/intelligence/status`
+- `GET /api/intelligence/online-status`
+- `GET /api/intelligence/onboarding/status`
+- `POST /api/intelligence/onboarding/complete`
+- `POST /api/intelligence/onboarding/skip`
+
+### Permissions and sources
+
+- `GET /api/intelligence/permissions`
+- `PATCH /api/intelligence/permissions`
+- `GET /api/intelligence/sources`
+
+Supported permission keys are `online_intelligence_enabled`, `first_run_completed`, `system_scan_allowed`, `project_scan_allowed`, `adaptive_memory_enabled`, `scheduled_refresh_enabled`, `refresh_frequency`, `allowed_sources`, and `offline_cache_enabled`.
+
+### Refresh and cache
+
+- `POST /api/intelligence/refresh`
+- `GET /api/intelligence/refresh/history`
+- `GET /api/intelligence/items`
+- `POST /api/intelligence/items`
+- `GET /api/intelligence/items/{item_id}`
+- `GET /api/intelligence/search?query=...`
+- `DELETE /api/intelligence/items/{item_id}`
+- `DELETE /api/intelligence/cache/clear`
+
+`GET /api/intelligence/items` supports `query`, `category`, `source_type`, `memory_domain`, `freshness`, `project_id`, and `limit` query parameters.
+
+Example manual refresh request:
+
+```json
+{
+  "project_id": "optional-project-id",
+  "triggered_by": "user"
+}
+```
+
+The refresh is blocked unless the offline cache is enabled, online intelligence is enabled, and connectivity can be confirmed.
+
+### Adaptive memory
+
+- `GET /api/intelligence/adaptive/preferences`
+- `POST /api/intelligence/adaptive/signal`
+- `DELETE /api/intelligence/adaptive/preferences/{preference_id}`
+
+Signals are accepted only while adaptive memory is enabled. The service is designed for non-sensitive preferences such as model choice, approved actions, framework preference, and workflow patterns.

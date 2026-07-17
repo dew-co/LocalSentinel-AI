@@ -1,3 +1,7 @@
+# LocalSentinel Hybrid Intelligence Proposal
+
+> Status: design proposal only. The shipped Intelligence Engine is local-first and does not yet include the Genkit gateway, Firebase AI Logic, Gemini routing, or any cloud provider integration described below. See [Intelligence Engine](intelligence-engine.md) for the implemented behavior.
+
 You are a senior local AI systems engineer, Genkit engineer, Firebase engineer, FastAPI backend engineer, React TypeScript frontend engineer, RAG engineer, and privacy-first AI product architect.
 
 Modify and enhance my existing project:

@@ -23,6 +23,12 @@ The central intelligence layer relies on the following services:
 - `model_router_service.py` manages connections to Ollama, tracks installed models, tests health, and falls back to secondary models if the primary coding model is unavailable.
 - `system_intelligence_service.py` securely checks installed local tools (Node, Python, Git) using read-only commands and calculates a development readiness score.
 - `memory_service.py` stores and retrieves cross-domain memory data (Project Brain, System Brain, User Work Brain, Interaction Brain) using SQLite.
+- `intelligence_engine_service.py` coordinates consent checks, manual refreshes, knowledge classification, local cache writes, RAG-linked project memory, and offline context for SentinelCore.
+- `online_status_service.py` performs a short, non-blocking connectivity check only when intelligence status or refresh is requested.
+- `intelligence_source_service.py` maintains the vetted source catalog and curated, source-attributed development knowledge templates.
+- `knowledge_cache_service.py` retrieves cached intelligence by query, source, category, memory domain, freshness, or project.
+- `adaptive_memory_service.py` converts permitted non-sensitive activity signals into user-editable local preferences.
+- `intelligence_scheduler_service.py` persists refresh preferences. The MVP does not start background refresh jobs.
 - `research_service.py` tracks LLM-generated or manual research topics, sources, and recommendations.
 - `activity_service.py` provides a transparent, centralized audit log of all critical LocalSentinel actions and errors.
 - `agent_map_service.py` manages and lists the available internal specialized agent roles.
@@ -42,6 +48,8 @@ The sleek glassmorphism command center includes:
 - **Research Center**: A staging area for querying development concepts and saving notes.
 - **Activity Console**: A complete timeline of background events, tool actions, and errors.
 - **Agent Map Page**: A visual tree representing the active sub-agents within the Sentinel ecosystem.
+- **Intelligence Center**: First-run consent, cache controls, source visibility, refresh history, adaptive preferences, and cache deletion controls.
+- **Teams Hierarchy Details**: Agent details open in an on-demand right-side drawer; the drawer can be collapsed and reopened without changing the selected agent.
 - **Dashboard & Chat**: Main hubs for interacting with the LLM, viewing RAG citations, and running the agent planner.
 
 ## Database (SQLite)
@@ -53,6 +61,8 @@ The `db.py` layer abstracts SQLite and tracks:
 - `research_notes` (Stored external knowledge)
 - `activity_logs` (Audit trails)
 - `agent_roles` (Defined agent capabilities)
+- `intelligence_items`, `intelligence_sources`, `intelligence_refresh_runs`
+- `user_activity_signals`, `adaptive_preferences`, `consent_settings`
 
 ## Safety Boundaries
 
@@ -60,6 +70,8 @@ The `db.py` layer abstracts SQLite and tracks:
 - **Approval Gates**: File creation and CLI commands are previewed.
 - **Read-Only System Checks**: The System Intelligence Scanner only runs `--version` commands.
 - **No Uploads**: No code or personal data is uploaded to external servers.
+- **Explicit Intelligence Consent**: Online intelligence, system scans, project-linked intelligence, adaptive memory, cache storage, and refresh preferences are stored locally and controlled separately.
+- **Manual Refresh Only**: Background refresh remains disabled in the MVP even when a future frequency is selected.
 
 ## Voice Companion Layer
 
