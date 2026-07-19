@@ -27,11 +27,9 @@ export function SystemIntelligencePage() {
         if (data.status === 'ok') setReadiness(data.readiness);
       }).catch(() => undefined);
       
-    fetch('http://localhost:8000/api/models/status')
-      .then(res => res.json())
-      .then(data => {
-        setModels(data);
-      }).catch(() => undefined);
+    api.modelStatus()
+      .then(data => setModels(data))
+      .catch(() => undefined);
 
     api.intelligenceItems({ memory_domain: 'System Brain', limit: 5 })
       .then(data => setSystemKnowledge(data.items))

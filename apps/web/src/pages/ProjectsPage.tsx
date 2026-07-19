@@ -1,4 +1,4 @@
-import { FolderSearch, ScanSearch, FolderOpen } from "lucide-react";
+import { FolderSearch, ScanSearch } from "lucide-react";
 import { useEffect, useState } from "react";
 import ProjectCard from "../components/projects/ProjectCard";
 import ProjectTree from "../components/projects/ProjectTree";
@@ -30,17 +30,6 @@ export default function ProjectsPage() {
       setError(err instanceof Error ? err.message : "Scan failed.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleBrowse = async () => {
-    try {
-      const result = await fetch('http://localhost:8000/api/system/dialog/folder', { method: 'POST' }).then(res => res.json());
-      if (result.status === 'ok' && result.path) {
-        setPath(result.path);
-      }
-    } catch (err) {
-      console.error("Browse failed", err);
     }
   };
 
@@ -79,21 +68,12 @@ export default function ProjectsPage() {
           
           <div className="mb-4">
             <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-500">Local Directory Path</label>
-            <div className="flex gap-2">
-              <input 
-                className="w-full rounded border border-sentinel-border bg-black/40 px-3 py-2.5 text-sm text-white focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50" 
-                value={path} 
-                onChange={(event) => setPath(event.target.value)} 
-                placeholder="/path/to/project" 
-              />
-              <button 
-                onClick={handleBrowse}
-                className="flex items-center justify-center rounded border border-sentinel-border bg-white/5 px-3 py-2 text-slate-300 hover:bg-white/10 hover:text-white transition-colors"
-                title="Browse Folders"
-              >
-                <FolderOpen size={16} />
-              </button>
-            </div>
+            <input
+              className="w-full rounded border border-sentinel-border bg-black/40 px-3 py-2.5 text-sm text-white focus:border-cyan-500/50 focus:outline-none focus:ring-1 focus:ring-cyan-500/50"
+              value={path}
+              onChange={(event) => setPath(event.target.value)}
+              placeholder="/path/to/project"
+            />
           </div>
           
           <button 
