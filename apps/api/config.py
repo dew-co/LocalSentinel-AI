@@ -15,6 +15,12 @@ SQLITE_DIR = DATA_DIR / "sqlite"
 class AppSettings(BaseModel):
     app_name: str = "LocalSentinel AI"
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    # Keep the model resident between requests so it does not reload (slow) on
+    # every chat turn. Ollama accepts durations like "10m" or "-1" for forever.
+    ollama_keep_alive: str = os.getenv("OLLAMA_KEEP_ALIVE", "10m")
+    # Context window. Larger uses more RAM (KV cache); keep it modest on
+    # low-memory machines. 4096 is a safe default for small local models.
+    ollama_num_ctx: int = int(os.getenv("OLLAMA_NUM_CTX", "4096"))
     safe_mode: bool = True
     voice_mode: bool = True
     rag_enabled: bool = True

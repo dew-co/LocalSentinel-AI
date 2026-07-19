@@ -76,13 +76,28 @@ Install and start Ollama locally. LocalSentinel AI checks:
 http://localhost:11434
 ```
 
-Recommended model options:
+**Pick a model that fits your RAM.** Because models run on your own machine
+(on the CPU if you have no dedicated GPU), an oversized model will swap to disk
+and freeze the system. Match the model to your available memory:
+
+| Available RAM | No dedicated GPU | Recommended model | Approx. RAM in use |
+| --- | --- | --- | --- |
+| 8 GB or less | yes | `qwen2.5-coder:1.5b` | ~1.5 GB |
+| 8–12 GB | yes | `qwen2.5-coder:3b` | ~2.3 GB |
+| 12–20 GB | either | `qwen2.5-coder:7b` | ~5.5 GB |
+| 20 GB+ / GPU | either | `qwen2.5-coder:14b` | ~10 GB |
 
 ```bash
-ollama pull qwen2.5-coder:7b
-ollama pull deepseek-coder:6.7b
-ollama pull llama3:8b
+# Low-RAM / CPU-only machines (safe default)
+ollama pull qwen2.5-coder:1.5b
+
+# For RAG embeddings (tiny, ~275 MB)
+ollama pull nomic-embed-text
 ```
+
+> Note: 7B/8B models such as `deepseek-coder:6.7b` and `llama3:8b` need roughly
+> 5–6 GB of free RAM and are slow on CPU-only hardware. Avoid them on machines
+> with 8 GB or less. The Models page shows a recommendation sized to your RAM.
 
 Use the Models page or settings to select and test the active coding and fast reasoning models.
 

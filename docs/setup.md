@@ -30,20 +30,40 @@ The dashboard runs at `http://localhost:5173`.
 
 ## Ollama
 
-Install Ollama from `https://ollama.com`, start it locally, then pull a coding model after reviewing the size:
+Install Ollama from `https://ollama.com`, start it locally, then pull a coding
+model **sized to your available RAM** — an oversized model runs on the CPU (if
+you have no dedicated GPU), swaps to disk, and can freeze the machine:
 
 ```bash
+# 8 GB RAM or less / CPU-only (safe default)
+ollama pull qwen2.5-coder:1.5b
+
+# 8–12 GB RAM
+ollama pull qwen2.5-coder:3b
+
+# 12 GB+ RAM or a dedicated GPU
 ollama pull qwen2.5-coder:7b
 ```
 
-Useful alternatives:
+For RAG embeddings, a tiny dedicated model keeps indexing light:
 
 ```bash
-ollama pull deepseek-coder:6.7b
-ollama pull llama3:8b
+ollama pull nomic-embed-text
 ```
 
+Avoid 7B/8B models (`deepseek-coder:6.7b`, `llama3:8b`) on machines with 8 GB
+or less. The Models page recommends a model sized to your detected RAM.
+
 LocalSentinel AI checks Ollama at `http://localhost:11434`.
+
+### Ollama tuning (optional)
+
+These environment variables control how the backend calls Ollama:
+
+```bash
+OLLAMA_KEEP_ALIVE=10m   # keep the model in RAM between chats (avoids slow reloads)
+OLLAMA_NUM_CTX=4096     # context window; lower it to save RAM, raise it for more context
+```
 
 ## First-Run Intelligence Setup
 

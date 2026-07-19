@@ -16,11 +16,15 @@ class ModelManager:
         except Exception:
             ram_gb = 8
 
+        # Sized so the model fits comfortably in RAM alongside the OS/browser.
+        # No-GPU machines run these on CPU, where smaller is also much faster.
         if ram_gb < 8:
             return "qwen2.5-coder:1.5b"
-        if ram_gb < 16:
+        if ram_gb < 12:
+            return "qwen2.5-coder:3b"
+        if ram_gb < 20:
             return "qwen2.5-coder:7b"
-        return "qwen3-coder:latest"
+        return "qwen2.5-coder:14b"
 
     async def status(self) -> dict[str, Any]:
         running = await ollama_service.is_running()

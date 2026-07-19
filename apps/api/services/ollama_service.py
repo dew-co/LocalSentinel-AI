@@ -27,9 +27,15 @@ class OllamaService:
             return []
 
     async def chat(self, model: str, messages: list[dict[str, str]]) -> str:
-        payload = {"model": model, "messages": messages, "stream": False}
+        payload = {
+            "model": model,
+            "messages": messages,
+            "stream": False,
+            "keep_alive": settings.ollama_keep_alive,
+            "options": {"num_ctx": settings.ollama_num_ctx},
+        }
         try:
-            async with httpx.AsyncClient(timeout=45) as client:
+            async with httpx.AsyncClient(timeout=90) as client:
                 response = await client.post(f"{self.base_url}/api/chat", json=payload)
             response.raise_for_status()
             data = response.json()
@@ -41,8 +47,17 @@ class OllamaService:
         except httpx.HTTPError as exc:
             raise RuntimeError(f"Ollama chat request failed: {exc}") from exc
 
-    async def generate(self, model: str, prompt: str, timeout: float = 45, num_predict: int = 450) -> str:
-        payload = {"model": model, "prompt": prompt, "stream": False, "options": {"num_predict": num_predict}}
+    async def generate(self, model: str, prompt: str, timeout: float = 90, num_predict: int = 450) -> str:
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "keep_alive": settings.ollama_keep_alive,
+            "options": {
+                "num_predict": num_predict,
+                "num_ctx": settings.ollama_num_ctx,
+            },
+        }
         try:
             async with httpx.AsyncClient(timeout=timeout) as client:
                 response = await client.post(f"{self.base_url}/api/generate", json=payload)
@@ -57,7 +72,9 @@ class OllamaService:
 
     async def complete(self, model: str, system: str, user: str, response_length: str = "balanced") -> str:
         num_predict = {"brief": 180, "balanced": 420, "detailed": 800}.get(response_length, 420)
-        timeout = {"brief": 5, "balanced": 12, "detailed": 30}.get(response_length, 12)
+        # CPU-only, GPU-less machines generate a few tokens/sec, so the earlier
+        # 5/12/30s limits cut off almost every real answer. Give the model room.
+        timeout = {"brief": 45, "balanced": 120, "detailed": 240}.get(response_length, 120)
         prompt = f"System instructions:\n{system}\n\nUser context and request:\n{user}\n\nSentinel Core response:"
         return await self.generate(model, prompt, timeout=timeout, num_predict=num_predict)
 
